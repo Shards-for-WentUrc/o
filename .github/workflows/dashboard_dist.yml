@@ -1,4 +1,4 @@
-name: AstrBot Dashboard Dist
+name: AstrBot Dashboard CI - Dashboard-only (pnpm fixed)
 
 on:
   push:
@@ -27,18 +27,29 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: true
 
-      - name: Setup Node.js 20 (inline, not in env)
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Setup pnpm
+      - name: Setup pnpm (preferred)
         uses: pnpm/action-setup@v2
         with:
-          run_install: false
+          version: '8'       
+          run_install: false 
+
+      - name: Ensure pnpm available (corepack fallback)
+        run: |
+          set -eux
+          if ! command -v pnpm >/dev/null 2>&1; then
+            echo "pnpm not found from pnpm/action-setup — using corepack fallback"
+            corepack enable
+            corepack prepare pnpm@8.8.0 --activate || true
+          else
+            echo "pnpm already available: $(pnpm --version)"
+          fi
 
       - name: Cache pnpm store
         uses: actions/cache@v4
@@ -52,6 +63,8 @@ jobs:
         working-directory: dashboard
         run: |
           set -eux
+          # double-check pnpm availability before running
+          echo "pnpm version: $(pnpm --version)"
           pnpm install --frozen-lockfile
           pnpm run build
 
@@ -61,17 +74,14 @@ jobs:
           TARGET_DIST="dashboard/dist"
           if [ ! -d "${TARGET_DIST}" ]; then
             echo "Build output '${TARGET_DIST}' not found" >&2
-            ls -la
+            ls -la dashboard || true
             exit 1
           fi
 
           COMMIT_SHA=$(git rev-parse --verify HEAD)
           echo "COMMIT_SHA=${COMMIT_SHA}" >> $GITHUB_ENV
-          echo "Injected COMMIT_SHA=${COMMIT_SHA}"
-
           mkdir -p "${TARGET_DIST}/assets"
           echo "${COMMIT_SHA}" > "${TARGET_DIST}/assets/version"
-
           find "${TARGET_DIST}" -type f -name "*.md" -print -delete || true
 
           ZIP_NAME="dist-${COMMIT_SHA}.zip"
@@ -79,7 +89,6 @@ jobs:
           zip -r "../${ZIP_NAME}" dist
           cd -
           echo "ZIPPED=${ZIP_NAME}" >> $GITHUB_ENV
-          echo "Packaged artifact: ${ZIP_NAME}"
 
       - name: Upload production artifact (zip)
         uses: actions/upload-artifact@v5
