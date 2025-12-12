@@ -22,7 +22,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository (full history)
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -43,7 +43,7 @@ jobs:
           node-version: '20'
           # remove cache: 'pnpm' to avoid requiring pnpm before it's installed
 
-      - name: Ensure pnpm (use official pnpm/action-setup)
+      - name: Ensure pnpm
         uses: pnpm/action-setup@v2
         with:
           version: '8'
