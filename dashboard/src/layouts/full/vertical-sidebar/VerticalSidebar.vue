@@ -96,7 +96,7 @@ function toggleIframe() {
 
 function openIframeLink(url) {
   if (typeof window !== 'undefined') {
-    let url_ = url || "https://astrbot.app";
+    let url_ = url || "https://docs.astrbot.app";
     window.open(url_, "_blank");
   }
 }
@@ -301,7 +301,7 @@ fetchStarCount();
       <div style="display: flex; gap: 8px;">
         <v-btn
           icon
-          @click.stop="openIframeLink('https://astrbot.app')"
+          @click.stop="openIframeLink('https://docs.astrbot.app')"
           @mousedown.stop
           style="border-radius: 8px; border: 1px solid #ccc;"
         >
@@ -318,7 +318,7 @@ fetchStarCount();
       </div>
     </div>
     <iframe
-      src="https://astrbot.app"
+      src="https://docs.astrbot.app"
       style="width: 100%; height: calc(100% - 56px); border: none; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;"
     ></iframe>
   </div>
