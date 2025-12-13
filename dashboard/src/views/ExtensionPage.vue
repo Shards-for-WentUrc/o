@@ -1055,14 +1055,14 @@ watch(marketSearch, (newVal) => {
 
   <!-- 上传插件对话框 -->
   <v-dialog v-model="dialog" width="500">
-    <div class="v-card v-theme--PurpleThemeDark v-card--density-default rounded-lg v-card--variant-elevated">
-      <div class="v-card__loader">
-        <v-progress-linear :indeterminate="loading_" color="primary" height="2" :active="loading_"></v-progress-linear>
-      </div>
+    <v-card :loading="loading_" class="rounded-lg" elevation="2">
+      <template #loader>
+        <v-progress-linear :indeterminate="loading_" color="primary" height="2"></v-progress-linear>
+      </template>
 
-      <div class="v-card-title text-h5">{{ tm('dialogs.install.title') }}</div>
-      
-      <div class="v-card-text">
+      <v-card-title class="text-h5">{{ tm('dialogs.install.title') }}</v-card-title>
+
+      <v-card-text>
         <v-tabs v-model="uploadTab" color="primary">
           <v-tab value="file">{{ tm('dialogs.install.fromFile') }}</v-tab>
           <v-tab value="url">{{ tm('dialogs.install.fromUrl') }}</v-tab>
@@ -1098,19 +1098,19 @@ watch(marketSearch, (newVal) => {
               <v-text-field v-model="extension_url" :label="tm('upload.enterUrl')" variant="outlined"
                 prepend-inner-icon="mdi-link" hide-details class="rounded-lg mb-4"
                 placeholder="https://github.com/username/repo"></v-text-field>
-              
+
               <ProxySelector></ProxySelector>
             </div>
           </v-window-item>
         </v-window>
-      </div>
+      </v-card-text>
 
-      <div class="v-card-actions">
+      <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn color="grey" variant="text" @click="dialog = false">{{ tm('buttons.cancel') }}</v-btn>
         <v-btn color="primary" variant="text" @click="newExtension">{{ tm('buttons.install') }}</v-btn>
-      </div>
-    </div>
+      </v-card-actions>
+    </v-card>
   </v-dialog>
 
   <!-- 添加/编辑自定义插件源对话框 -->
