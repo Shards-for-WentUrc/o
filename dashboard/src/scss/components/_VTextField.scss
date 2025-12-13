@@ -37,21 +37,21 @@
 }
 
 .v-theme--PurpleThemeDark .v-text-field .v-field__outline {
-  --v-field-border-width: 2px !important;
+  --v-field-border-width: 1.2px !important;
   --v-field-border-opacity: 1 !important;
   color: rgba(var(--v-theme-on-surface), 0.5) !important;
   border-color: rgba(var(--v-theme-on-surface), 0.5) !important;
 }
 
 .v-theme--PurpleThemeDark .v-text-field:hover .v-field__outline {
-  --v-field-border-width: 2px !important;
+  --v-field-border-width: 1.2px !important;
   --v-field-border-opacity: 1 !important;
   color: rgba(var(--v-theme-on-surface), 0.7) !important;
   border-color: rgba(var(--v-theme-on-surface), 0.7) !important;
 }
 
 .v-theme--PurpleThemeDark .v-text-field .v-field--focused .v-field__outline {
-  --v-field-border-width: 2.5px !important;
+  --v-field-border-width: 2px !important;
   --v-field-border-opacity: 1 !important;
   color: rgb(var(--v-theme-primary)) !important;
   border-color: rgb(var(--v-theme-primary)) !important;
