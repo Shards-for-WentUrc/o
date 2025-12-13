@@ -27,6 +27,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch latest tag
+        run: |
+          set -eux
+          git fetch --tags
+          latest_tag="$(git describe --tags "$(git rev-list --tags --max-count=1)" 2>/dev/null || true)"
+          if [ -z "${latest_tag}" ]; then
+            latest_tag="unknown"
+          fi
+          echo "LATEST_TAG=${latest_tag}" >> $GITHUB_ENV
+
       - name: Setup Node.js 20
         uses: actions/setup-node@v6
         with:
@@ -69,6 +79,7 @@ jobs:
 
           mkdir -p "${TARGET_DIST}/assets"
           echo "${COMMIT_SHA}" > "${TARGET_DIST}/assets/version"
+          echo "${LATEST_TAG}" >> "${TARGET_DIST}/assets/version"
 
           find "${TARGET_DIST}" -type f -name "*.md" -print -delete || true
 
