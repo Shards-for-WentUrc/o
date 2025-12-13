@@ -44,7 +44,7 @@ const toggleTheme = () => {
 
 const switchToDarkLabel = computed(() => toI18nString(t('theme.switchToDark')));
 const switchToLightLabel = computed(() => toI18nString(t('theme.switchToLight')));
-const themeIconColor = computed(() => (isDarkTheme.value ? '#bae6fd' : '#0284c7'));
+const themeIconColor = computed(() => 'primary');
 
 type WallpaperResponse = {
   primaryUrl: string | null
@@ -131,7 +131,7 @@ onUnmounted(() => {
             @error="onHeroImageError"
           >
           <div class="visual-controls" role="toolbar" aria-label="Login interface controls">
-            <LanguageSwitcher class="visual-controls__language" />
+            <LanguageSwitcher class="visual-controls__language" :icon-color="themeIconColor" />
             <v-divider vertical class="visual-controls__divider" />
             <v-btn
               class="visual-controls__theme-btn"
@@ -351,7 +351,8 @@ onUnmounted(() => {
 }
 
 .visual-controls__divider {
-  height: 22px;
+  align-self: stretch;
+  margin: 0 4px;
   border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
   opacity: 0.65 !important;
 }
@@ -362,11 +363,10 @@ onUnmounted(() => {
   width: 32px !important;
   height: 32px !important;
   background: transparent !important;
-  transition: transform 0.25s ease, background-color 0.25s ease;
+  transition: background-color 0.25s ease;
 }
 
 .visual-controls__theme-btn:hover {
-  transform: scale(1.06);
   background: rgba(var(--v-theme-primary), 0.16) !important;
 }
 

@@ -47,13 +47,15 @@ import type { Locale } from '@/i18n/types'
 
 const props = withDefaults(defineProps<{
   variant?: 'default' | 'header' | 'chatbox'
+  color?: string | undefined
 }>(), {
-  variant: 'default'
+  variant: 'default',
+  color: undefined
 })
 
 const { languageOptions, switchLanguage, locale } = useLanguageSwitcher()
 
-const iconColor = computed(() => (props.variant === 'default' ? 'primary' : undefined))
+const iconColor = computed(() => props.color ?? (props.variant === 'default' ? 'primary' : undefined))
 
 const languages = computed(() => 
   languageOptions.value.map(lang => ({
@@ -77,23 +79,26 @@ const changeLanguage = async (langCode: string) => {
 }
 
 /* 默认变体样式 - 圆形按钮用于登录页 */
+
 .language-switcher--default {
-  margin: 0 4px;
-  transition: all 0.3s ease;
+  margin: 0;
   border-radius: 50% !important;
   min-width: 32px !important;
   width: 32px !important;
   height: 32px !important;
+  background: transparent !important;
+  transition: background-color 0.25s ease;
 }
 
-.language-switcher--default:hover {
-  transform: scale(1.05);
-  background: rgba(var(--v-theme-primary), 0.12) !important;
+.language-switcher--default:hover,
+.language-switcher--default:focus-visible {
+  background: rgba(var(--v-theme-primary), 0.16) !important;
 }
 
 /* 深色模式下的悬停效果（仅对default变体） */
-:deep(.v-theme--PurpleThemeDark) .language-switcher--default:hover {
-  background: rgba(var(--v-theme-primary), 0.2) !important;
+:deep(.v-theme--PurpleThemeDark) .language-switcher--default:hover,
+:deep(.v-theme--PurpleThemeDark) .language-switcher--default:focus-visible {
+  background: rgba(var(--v-theme-primary), 0.24) !important;
 }
 
 .language-dropdown {
