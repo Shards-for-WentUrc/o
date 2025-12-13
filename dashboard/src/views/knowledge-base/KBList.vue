@@ -137,10 +137,10 @@
 
     <!-- Emoji 选择器对话框 -->
     <v-dialog v-model="showEmojiPicker" max-width="500px">
-      <v-card>
-        <v-card-title class="pa-4">{{ t('emoji.title') }}</v-card-title>
+      <v-card class="emoji-dialog-card">
+        <v-card-title class="pa-4 emoji-dialog-title">{{ t('emoji.title') }}</v-card-title>
         <v-divider />
-        <v-card-text class="pa-4">
+        <v-card-text class="pa-4 emoji-dialog-content">
           <div v-for="category in emojiCategories" :key="category.key" class="mb-4">
             <p class="text-subtitle-2 mb-2">{{ t(`emoji.categories.${category.key}`) }}</p>
             <div class="emoji-grid">
@@ -151,7 +151,7 @@
           </div>
         </v-card-text>
         <v-divider />
-        <v-card-actions class="pa-4">
+        <v-card-actions class="pa-4 emoji-dialog-actions">
           <v-spacer />
           <v-btn variant="text" @click="showEmojiPicker = false">
             {{ t('emoji.close') }}
@@ -596,6 +596,24 @@ onMounted(() => {
 .emoji-item:hover {
   background: rgba(var(--v-theme-primary), 0.1);
   transform: scale(1.2);
+}
+
+.emoji-dialog-card {
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.emoji-dialog-title,
+.emoji-dialog-actions {
+  flex-shrink: 0;
+}
+
+.emoji-dialog-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* 响应式设计 */
