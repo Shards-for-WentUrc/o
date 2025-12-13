@@ -27,11 +27,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch latest tag
+      - name: Fetch upstream latest tag
         run: |
           set -eux
-          git fetch --tags
-          latest_tag="$(git describe --tags "$(git rev-list --tags --max-count=1)" 2>/dev/null || true)"
+          git fetch --force --prune https://github.com/AstrBotDevs/AstrBot.git "refs/tags/*:refs/tags/upstream/*"
+          latest_tag="$(git for-each-ref 'refs/tags/upstream' --sort=-v:refname --format='%(refname:strip=2)' | head -n1)"
           if [ -z "${latest_tag}" ]; then
             latest_tag="unknown"
           fi
