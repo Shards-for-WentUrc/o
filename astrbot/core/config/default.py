@@ -4,7 +4,7 @@ import os
 
 from astrbot.core.utils.astrbot_path import get_astrbot_data_path
 
-VERSION = "4.9.0"
+VERSION = "4.9.2"
 DB_PATH = os.path.join(get_astrbot_data_path(), "data_v4.db")
 
 WEBHOOK_SUPPORTED_PLATFORMS = [
@@ -108,6 +108,7 @@ DEFAULT_CONFIG = {
         "provider_id": "",
         "dual_output": False,
         "use_file_service": False,
+        "trigger_probability": 1.0,
     },
     "provider_ltm_settings": {
         "group_icl_enable": False,
@@ -2209,6 +2210,9 @@ CONFIG_METADATA_2 = {
                     "use_file_service": {
                         "type": "bool",
                     },
+                    "trigger_probability": {
+                        "type": "float",
+                    },
                 },
             },
             "provider_ltm_settings": {
@@ -2415,6 +2419,14 @@ CONFIG_METADATA_3 = {
                         "description": "默认文本转语音模型",
                         "type": "string",
                         "_special": "select_provider_tts",
+                        "condition": {
+                            "provider_tts_settings.enable": True,
+                        },
+                    },
+                    "provider_tts_settings.trigger_probability": {
+                        "description": "TTS 触发概率",
+                        "type": "float",
+                        "slider": {"min": 0, "max": 1, "step": 0.05},
                         "condition": {
                             "provider_tts_settings.enable": True,
                         },
@@ -2986,6 +2998,7 @@ CONFIG_METADATA_3 = {
                         "description": "回复概率",
                         "type": "float",
                         "hint": "0.0-1.0 之间的数值",
+                        "slider": {"min": 0, "max": 1, "step": 0.05},
                         "condition": {
                             "provider_ltm_settings.active_reply.enable": True,
                         },

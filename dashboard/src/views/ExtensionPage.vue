@@ -1055,6 +1055,7 @@ watch(marketSearch, (newVal) => {
 
   <!-- 上传插件对话框 -->
   <v-dialog v-model="dialog" width="500">
+
     <v-card :loading="loading_" class="rounded-lg" elevation="2">
       <template #loader>
         <v-progress-linear :indeterminate="loading_" color="primary" height="2"></v-progress-linear>
