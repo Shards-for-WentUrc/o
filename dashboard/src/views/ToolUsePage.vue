@@ -12,7 +12,7 @@
             <v-tooltip location="top">
               <template v-slot:activator="{ props }">
                 <v-icon v-bind="props" size="small" color="primary" class="ms-1 cursor-pointer"
-                  @click="openurl('https://astrbot.app/use/function-calling.html')">
+                  @click="openurl('https://docs.astrbot.app/use/function-calling.html')">
                   mdi-information
                 </v-icon>
               </template>
