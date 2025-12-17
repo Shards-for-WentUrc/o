@@ -917,22 +917,22 @@ watch(marketSearch, (newVal) => {
           </div>
 
           <!-- 指令面板标签页内容 -->
-          <v-tab-item v-show="activeTab === 'components'">
+          <div v-show="activeTab === 'components'">
             <v-card class="rounded-lg" variant="flat" style="background-color: transparent;">
               <v-card-text class="pa-0">
                 <ComponentPanel :active="activeTab === 'components'" />
               </v-card-text>
             </v-card>
-          </v-tab-item>
+          </div>
 
           <!-- 已安装的 MCP 服务器标签页内容 -->
-          <v-tab-item v-show="activeTab === 'mcp'">
+          <div v-show="activeTab === 'mcp'">
             <v-card class="rounded-lg" variant="flat" style="background-color: transparent;">
               <v-card-text class="pa-0">
                 <McpServersSection />
               </v-card-text>
             </v-card>
-          </v-tab-item>
+          </div>
 
           <!-- 插件市场标签页内容 -->
           <div v-show="activeTab === 'market'">
