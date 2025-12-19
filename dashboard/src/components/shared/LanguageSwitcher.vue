@@ -1,5 +1,5 @@
 <template>
-  <StyledMenu offset="12" location="bottom center">
+  <v-menu offset="12" location="bottom center">
     <template v-slot:activator="{ props: activatorProps }">
       <v-btn
         v-bind="activatorProps"
@@ -19,28 +19,31 @@
       </v-btn>
     </template>
     
-    <v-list-item
-      v-for="lang in languages"
-      :key="lang.code"
-      :value="lang.code"
-      @click="changeLanguage(lang.code)"
-      :class="{ 'styled-menu-item-active': currentLocale === lang.code }"
-      class="styled-menu-item"
-      rounded="md"
-    >
-      <template v-slot:prepend>
-        <span class="language-flag">{{ lang.flag }}</span>
-      </template>
-      <v-list-item-title>{{ lang.name }}</v-list-item-title>
-    </v-list-item>
-  </StyledMenu>
+    <v-card class="language-dropdown" elevation="8" rounded="lg">
+      <v-list density="compact" class="pa-1">
+        <v-list-item
+          v-for="lang in languages"
+          :key="lang.code"
+          :value="lang.code"
+          @click="changeLanguage(lang.code)"
+          :class="{ 'v-list-item--active': currentLocale === lang.code, 'language-item-selected': currentLocale === lang.code }"
+          class="language-item"
+          rounded="md"
+        >
+          <template v-slot:prepend>
+            <span class="language-flag">{{ lang.flag }}</span>
+          </template>
+          <v-list-item-title>{{ lang.name }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-card>
+  </v-menu>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useLanguageSwitcher } from '@/i18n/composables'
 import type { Locale } from '@/i18n/types'
-import StyledMenu from '@/components/shared/StyledMenu.vue'
 
 const props = withDefaults(defineProps<{
   variant?: 'default' | 'header' | 'chatbox'
@@ -96,5 +99,50 @@ const changeLanguage = async (langCode: string) => {
 :deep(.v-theme--PurpleThemeDark) .language-switcher--default:hover,
 :deep(.v-theme--PurpleThemeDark) .language-switcher--default:focus-visible {
   background: rgba(var(--v-theme-primary), 0.24) !important;
+}
+
+.language-dropdown {
+  min-width: 100px;
+  width: fit-content;
+  border: 1px solid rgba(var(--v-theme-primary), 0.15) !important;
+  background: rgb(var(--v-theme-surface)) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* 深色模式下的下拉框样式 */
+:deep(.v-theme--PurpleThemeDark) .language-dropdown {
+  background: rgb(var(--v-theme-surface)) !important;
+  border: 1px solid rgba(var(--v-theme-primary), 0.32) !important;
+}
+
+.language-item {
+  margin: 2px 0;
+  transition: all 0.2s ease;
+}
+
+.language-item:hover {
+  background: rgba(var(--v-theme-primary), 0.12) !important;
+}
+
+.language-item-selected {
+  background: rgba(var(--v-theme-primary), 0.18) !important;
+  font-weight: 500;
+}
+
+.language-item-selected:hover {
+  background: rgba(var(--v-theme-primary), 0.24) !important;
+}
+
+/* 深色模式下的列表项悬停效果 */
+:deep(.v-theme--PurpleThemeDark) .language-item:hover {
+  background: rgba(var(--v-theme-primary), 0.18) !important;
+}
+
+:deep(.v-theme--PurpleThemeDark) .language-item-selected {
+  background: rgba(var(--v-theme-primary), 0.26) !important;
+}
+
+:deep(.v-theme--PurpleThemeDark) .language-item-selected:hover {
+  background: rgba(var(--v-theme-primary), 0.32) !important;
 }
 </style> 
