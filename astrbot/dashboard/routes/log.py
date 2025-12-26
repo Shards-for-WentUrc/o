@@ -32,12 +32,9 @@ class LogRoute(Route):
         )
 
     async def _replay_cached_logs(
-        self, last_event_id: str | None
+        self, last_event_id: str
     ) -> AsyncGenerator[str, None]:
         """辅助生成器：重放缓存的日志"""
-        if not last_event_id:
-            return
-
         try:
             last_ts = float(last_event_id)
             cached_logs = list(self.log_broker.log_cache)
@@ -59,8 +56,9 @@ class LogRoute(Route):
         async def stream():
             queue = None
             try:
-                async for event in self._replay_cached_logs(last_event_id):
-                    yield event
+                if last_event_id:
+                    async for event in self._replay_cached_logs(last_event_id):
+                        yield event
 
                 queue = self.log_broker.register()
                 while True:

@@ -21,6 +21,8 @@ export default defineConfig(async () => {
     ],
     resolve: {
       alias: {
+        // 添加了 mermaid 支持
+        'mermaid': 'mermaid/dist/mermaid.js',
         '@': fileURLToPath(new URL('./src', import.meta.url))
       }
     },
@@ -29,6 +31,7 @@ export default defineConfig(async () => {
         scss: {}
       }
     },
+    // Vue 3 生产环境标志
     define: {
       __VUE_OPTIONS_API__: true,
       __VUE_PROD_DEVTOOLS__: false,
