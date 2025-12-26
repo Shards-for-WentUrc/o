@@ -52,7 +52,10 @@
                         </div>
                         <div v-else class="welcome-title">
                             <span>Hello, I'm</span>
-                            <span class="bot-name">AstrBot ⭐</span>
+                            <span class="bot-name">
+                                AstrBot
+                                <v-icon size="small" class="ml-2 gradient-star">mdi-star-four-points</v-icon>
+                            </span>
                         </div>
                     </div>
 
@@ -576,6 +579,20 @@ onBeforeUnmount(() => {
     font-weight: 700;
     margin-left: 8px;
     color: var(--v-theme-secondary);
+    display: inline-flex;
+    align-items: center;
+}
+
+.gradient-star {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffe082, #fdd835, #ff8f00, #ffe082);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    transform: translateY(-1px);
+    animation: gradientShift 4s ease-in-out infinite;
 }
 
 .fade-in {
@@ -600,6 +617,18 @@ onBeforeUnmount(() => {
 
     .conversation-header {
         padding: 2px;
+    }
+}
+
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
     }
 }
 </style>

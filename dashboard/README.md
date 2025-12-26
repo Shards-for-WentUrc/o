@@ -1,3 +1,3 @@
-# AstrBot 管理面板
+# 个人维护的 AstrBot 管理面板
 
-基于 CodedThemes/Berry 模板开发。
+准备迁移至 nuxt.js ，实现前后端分离

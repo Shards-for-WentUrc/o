@@ -392,21 +392,39 @@ const changeLanguage = async (langCode: string) => {
         </v-btn>
       </template>
 
-      <!-- 语言切换 -->
-      <v-list-item
-        v-for="lang in languages"
-        :key="lang.code"
-        :value="lang.code"
-        @click="changeLanguage(lang.code)"
-        :class="{ 'styled-menu-item-active': currentLocale === lang.code }"
-        class="styled-menu-item"
-        rounded="md"
-      >
-        <template v-slot:prepend>
-          <span class="language-flag">{{ lang.flag }}</span>
+      <!-- 语言切换（分组，悬停展开二级菜单） -->
+      <v-menu open-on-hover offset="12" location="right" origin="start" :close-on-content-click="true">
+        <template v-slot:activator="{ props: activatorProps }">
+          <v-list-item v-bind="activatorProps" class="styled-menu-item" rounded="md">
+            <template v-slot:prepend>
+              <v-icon>mdi-translate</v-icon>
+            </template>
+            <v-list-item-title>{{ t('core.header.buttons.language') || 'Language' }}</v-list-item-title>
+            <template v-slot:append>
+              <v-icon>mdi-chevron-right</v-icon>
+            </template>
+          </v-list-item>
         </template>
-        <v-list-item-title>{{ lang.name }}</v-list-item-title>
-      </v-list-item>
+
+        <v-card class="language-dropdown" elevation="8" rounded="lg">
+          <v-list density="compact" class="pa-1">
+            <v-list-item
+              v-for="lang in languages"
+              :key="lang.code"
+              :value="lang.code"
+              @click="changeLanguage(lang.code)"
+              :class="{ 'styled-menu-item-active': currentLocale === lang.code }"
+              class="language-item"
+              rounded="md"
+            >
+              <template v-slot:prepend>
+                <span class="language-flag">{{ lang.flag }}</span>
+              </template>
+              <v-list-item-title>{{ lang.name }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-card>
+      </v-menu>
 
       <!-- 主题切换 -->
       <v-list-item
@@ -455,14 +473,15 @@ const changeLanguage = async (langCode: string) => {
     <!-- 更新对话框 -->
     <v-dialog v-model="updateStatusDialog" :width="$vuetify.display.smAndDown ? '100%' : '1200'"
       :fullscreen="$vuetify.display.xs">
-      <v-card>
+      <!-- activator button removed -->
+      <v-card class="update-dialog-card">
         <v-card-title class="mobile-card-title">
           <span class="text-h5">{{ t('core.header.updateDialog.title') }}</span>
           <v-btn v-if="$vuetify.display.xs" icon @click="updateStatusDialog = false">
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="update-dialog-content">
           <v-container>
             <v-progress-linear v-show="installLoading" class="mb-4" indeterminate color="primary"></v-progress-linear>
 
@@ -554,7 +573,7 @@ const changeLanguage = async (langCode: string) => {
             </div>
           </v-container>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="update-dialog-actions">
           <v-spacer></v-spacer>
           <v-btn color="blue-darken-1" variant="text" @click="updateStatusDialog = false">
             {{ t('core.common.close') }}
@@ -684,6 +703,34 @@ const changeLanguage = async (langCode: string) => {
   text-transform: none;
   font-weight: 500;
   border-radius: 8px;
+}
+
+.update-dialog-card {
+  display: flex;
+  flex-direction: column;
+  max-height: min(90vh, 780px);
+}
+
+.update-dialog-card .mobile-card-title {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--v-theme-surface);
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+}
+
+.update-dialog-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.update-dialog-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--v-theme-surface);
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
 }
 
 .account-dialog .v-avatar {

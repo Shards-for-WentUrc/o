@@ -8,7 +8,6 @@ from quart import Response as QuartResponse
 from quart import make_response, request
 
 from astrbot.core import LogBroker, logger
-
 from .route import Response, Route, RouteContext
 
 
