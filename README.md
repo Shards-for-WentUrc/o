@@ -2,7 +2,7 @@
 
 <img width="751" height="534" alt="image" src="https://github.com/user-attachments/assets/adb63ca4-5f14-4a8e-a90d-77fcdb575092" />
 
-已经点过 star 的将会被 block。
+## **已经点过 star 的将会被 block。**
 
 ---
 
