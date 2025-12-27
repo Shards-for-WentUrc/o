@@ -122,6 +122,10 @@ const marketCustomFilter = (value, query, item) => {
   const q = normalizeStr(query);
   if (!q) return true;
 
+  if (item?.searchIndex) {
+    return item.searchIndex.includes(q);
+  }
+
   const candidates = new Set();
   if (value != null) candidates.add(String(value));
   if (item?.name) candidates.add(String(item.name));
@@ -696,6 +700,26 @@ const trimExtensionName = () => {
         plugin.trimmedName = plugin.name;
       }
     }
+    
+    const searchTexts = [];
+    if (plugin.name) {
+      searchTexts.push(plugin.name);
+      searchTexts.push(toPinyinText(plugin.name));
+      searchTexts.push(toInitials(plugin.name));
+    }
+    if (plugin.trimmedName) searchTexts.push(plugin.trimmedName);
+    if (plugin.desc) {
+      searchTexts.push(plugin.desc);
+      searchTexts.push(toPinyinText(plugin.desc));
+      searchTexts.push(toInitials(plugin.desc));
+    }
+    if (plugin.author) {
+      searchTexts.push(plugin.author);
+      searchTexts.push(toPinyinText(plugin.author));
+      searchTexts.push(toInitials(plugin.author));
+    }
+    
+    plugin.searchIndex = searchTexts.map(normalizeStr).join(' ');
   });
 };
 
@@ -813,9 +837,9 @@ const refreshPluginMarket = async () => {
   }
 };
 
-onMounted(async () => {
-  await getExtensions();
+onMounted(() => {
 
+  getExtensions();
   loadCustomSources();
 
   let urlParams;
@@ -830,15 +854,19 @@ onMounted(async () => {
     openExtensionConfig(plugin_name);
   }
 
-  try {
-    const data = await commonStore.getPluginCollections(false, selectedSource.value);
-    pluginMarketData.value = data;
-    trimExtensionName();
-    checkAlreadyInstalled();
-    checkUpdate();
-  } catch (err) {
-    toast(tm('messages.getMarketDataFailed') + ' ' + err, 'error');
-  }
+  commonStore.getPluginCollections(false, selectedSource.value)
+    .then(data => {
+      pluginMarketData.value = data;
+      
+      setTimeout(() => {
+        trimExtensionName();
+        checkAlreadyInstalled();
+        checkUpdate();
+      }, 0);
+    })
+    .catch(err => {
+      toast(tm('messages.getMarketDataFailed') + ' ' + err, 'error');
+    });
 });
 
 let searchDebounceTimer = null;
@@ -898,7 +926,7 @@ watch(marketSearch, (newVal) => {
 
 
           <!-- 已安装插件标签页内容 -->
-          <div v-show="activeTab === 'installed'">
+          <div v-if="activeTab === 'installed'">
             <InstalledExtensionsSection
               v-model:isListView="isListView"
               :filtered-plugins="filteredPlugins"
@@ -923,16 +951,16 @@ watch(marketSearch, (newVal) => {
           </div>
 
           <!-- 指令面板标签页内容 -->
-          <div v-show="activeTab === 'components'">
+          <div v-if="activeTab === 'components'">
             <v-card class="rounded-lg" variant="flat" style="background-color: transparent;">
               <v-card-text class="pa-0">
-                <ComponentPanel :active="activeTab === 'components'" />
+                <ComponentPanel :active="true" />
               </v-card-text>
             </v-card>
           </div>
 
           <!-- 已安装的 MCP 服务器标签页内容 -->
-          <div v-show="activeTab === 'mcp'">
+          <div v-if="activeTab === 'mcp'">
             <v-card class="rounded-lg" variant="flat" style="background-color: transparent;">
               <v-card-text class="pa-0">
                 <McpServersSection />
@@ -941,7 +969,7 @@ watch(marketSearch, (newVal) => {
           </div>
 
           <!-- 插件市场标签页内容 -->
-          <div v-show="activeTab === 'market'">
+          <div v-if="activeTab === 'market'">
             <MarketExtensionsSection
               :filtered-market-plugins="filteredMarketPlugins"
               :paginated-plugins="paginatedPlugins"
