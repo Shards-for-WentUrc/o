@@ -136,6 +136,11 @@ const MainRoutes = {
       name: 'About',
       path: '/about',
       component: () => import('@/views/AboutPage.vue')
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: () => import('@/views/Error404.vue')
     }
   ]
 };

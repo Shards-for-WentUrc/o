@@ -86,7 +86,10 @@
     "delete": "Delete",
     "copy": "Copy",
     "edit": "Edit",
-    "copy": "Copy",
     "noData": "No data available"
+  },
+  "error404": {
+    "returnHome": "Return Home",
+    "goBack": "Go Back"
   }
 }
