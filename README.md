@@ -1,6 +1,6 @@
 <div align="center">
 
-![LandfillBot](https://placehold.co/1000x200/333333/FF0000/png?text=LandfillBot&font=playfair+display)
+![LandfillBot](https://placehold.co/1200x380/333333/FF0000/png?text=LandfillBot&font=playfair+display)
 
 <img src="https://img.shields.io/badge/WARNING-这不是官方仓库-critical?style=for-the-badge&logo=x&logoColor=white" height="28">
 <img src="https://img.shields.io/badge/WARNING-已经点过_star_的将会被_BLOCK-black?style=for-the-badge&logo=github" height="28">
