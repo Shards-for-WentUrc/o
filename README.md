@@ -1,13 +1,3 @@
-<div align="center">
-
-![LandfillBot](https://placehold.co/1200x380/333333/FF0000/png?text=LandfillBot&font=playfair+display)
-
-## 这个仓库不是 [AstrBot](https://github.com/AstrBotDevs/AstrBot) 官方仓库。而且，据说这个仓库点不上 star 哦😐
-
-</div>
-
-原 AstrBot 内容部分:
-
 ![AstrBot-Logo-Simplified](https://github.com/user-attachments/assets/ffd99b6b-3272-4682-beaa-6fe74250f7d9)
 
 <div align="center">
