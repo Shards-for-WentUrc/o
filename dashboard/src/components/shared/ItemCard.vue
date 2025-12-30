@@ -1,6 +1,6 @@
 <template>
   <v-card class="item-card hover-elevation" style="padding: 4px;" elevation="0">
-    <v-card-title class="d-flex justify-space-between align-center pb-1 pt-3">
+    <v-card-title v-if="!hideHeader" class="d-flex justify-space-between align-center pb-1 pt-3">
       <span class="text-h2 text-truncate" :title="getItemTitle()">{{ getItemTitle() }}</span>
       <v-tooltip location="top">
         <template v-slot:activator="{ props }">
@@ -23,7 +23,7 @@
       <slot name="item-details" :item="item"></slot>
     </v-card-text>
 
-    <v-card-actions style="margin: 8px;">
+    <v-card-actions v-if="!hideHeader" style="margin: 8px;">
       <v-btn
         variant="outlined"
         color="error"
@@ -101,6 +101,11 @@ export default {
       default: false
     },
     showCopyButton: {
+      type: Boolean,
+      default: false
+    }
+    ,
+    hideHeader: {
       type: Boolean,
       default: false
     }
