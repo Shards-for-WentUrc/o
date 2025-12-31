@@ -295,15 +295,7 @@ const isChristmas = computed(() => {
   return month === 12 && day === 25;
 });
 
-// 语言切换相关
 const { languageOptions, currentLanguage, switchLanguage, locale } = useLanguageSwitcher();
-const languages = computed(() => 
-  languageOptions.value.map(lang => ({
-    code: lang.value,
-    name: lang.label,
-    flag: lang.flag
-  }))
-);
 const currentLocale = computed(() => locale.value);
 const changeLanguage = async (langCode: string) => {
   await switchLanguage(langCode as Locale);
@@ -314,7 +306,6 @@ const changeLanguage = async (langCode: string) => {
 <template>
   <v-app-bar elevation="0" height="55">
 
-    <!-- 桌面端 menu 按钮 - 仅在 bot 模式下显示 -->
     <v-btn v-if="customizer.viewMode === 'bot' && useCustomizerStore().uiTheme === 'PurpleTheme'" style="margin-left: 16px;"
       class="hidden-md-and-down"  icon rounded="sm" variant="flat"
       @click.stop="customizer.SET_MINI_SIDEBAR(!customizer.mini_sidebar)">
@@ -326,7 +317,6 @@ const changeLanguage = async (langCode: string) => {
       @click.stop="customizer.SET_MINI_SIDEBAR(!customizer.mini_sidebar)">
       <v-icon>mdi-menu</v-icon>
     </v-btn>
-    <!-- 移动端 menu 按钮 - 仅在 bot 模式下显示 -->
     <v-btn v-if="customizer.viewMode === 'bot' && useCustomizerStore().uiTheme === 'PurpleTheme'" class="hidden-lg-and-up ms-3"
       icon rounded="sm" variant="flat" @click.stop="customizer.SET_SIDEBAR_DRAWER">
       <v-icon>mdi-menu</v-icon>
@@ -346,7 +336,6 @@ const changeLanguage = async (langCode: string) => {
 
   <v-spacer />
 
-    <!-- 版本提示信息 - 在手机上隐藏 -->
     <div class="mr-4 hidden-xs">
       <small v-if="hasNewVersion">
         {{ t('core.header.version.hasNewVersion') }}
@@ -356,7 +345,6 @@ const changeLanguage = async (langCode: string) => {
       </small>
     </div>
     
-    <!-- Bot/Chat 模式切换按钮 -->
     <v-btn-toggle
       v-model="viewMode"
       mandatory
@@ -376,7 +364,6 @@ const changeLanguage = async (langCode: string) => {
     </v-btn-toggle>
 
 
-    <!-- 功能菜单 -->
     <StyledMenu offset="12" location="bottom end">
       <template v-slot:activator="{ props: activatorProps }">
         <v-btn
@@ -392,7 +379,6 @@ const changeLanguage = async (langCode: string) => {
         </v-btn>
       </template>
 
-      <!-- 语言切换（分组，悬停展开二级菜单） -->
       <v-menu 
         :open-on-hover="!$vuetify.display.mobile"
         :open-on-click="true"
@@ -424,19 +410,22 @@ const changeLanguage = async (langCode: string) => {
         <v-card class="language-dropdown" elevation="8" rounded="lg">
           <v-list density="compact" class="pa-1">
              <v-list-item
-               v-for="lang in languages"
-               :key="lang.code"
-               :value="lang.code"
-               @click="changeLanguage(lang.code)"
-               :class="{ 'styled-menu-item-active': currentLocale === lang.code }"
+               v-for="lang in languageOptions"
+               :key="lang.value"
+               :value="lang.value"
+               @click="changeLanguage(lang.value)"
+               :class="{ 'styled-menu-item-active': currentLocale === lang.value }"
                class="language-item"
                rounded="md"
              >
                <template v-slot:prepend>
-                 <span class="language-flag">{{ lang.flag }}</span>
+                 <span 
+                    class="language-flag-styled" 
+                    :style="{ backgroundImage: `url(${lang.flagUrl})` }"
+                 ></span>
                </template>
-               <v-list-item-title>{{ lang.name }}</v-list-item-title>
-               <template v-slot:append v-if="currentLocale === lang.code">
+               <v-list-item-title>{{ lang.label }}</v-list-item-title>
+               <template v-slot:append v-if="currentLocale === lang.value">
                   <v-icon color="primary" size="small">mdi-check</v-icon>
                </template>
              </v-list-item>
@@ -444,7 +433,6 @@ const changeLanguage = async (langCode: string) => {
         </v-card>
       </v-menu>
 
-      <!-- 主题切换 -->
       <v-list-item
         @click="toggleDarkMode()"
         class="styled-menu-item"
@@ -460,7 +448,6 @@ const changeLanguage = async (langCode: string) => {
         </v-list-item-title>
       </v-list-item>
 
-      <!-- 更新按钮 -->
       <v-list-item
         @click="checkUpdate(); getReleases(); updateStatusDialog = true"
         class="styled-menu-item"
@@ -475,7 +462,6 @@ const changeLanguage = async (langCode: string) => {
         </template>
       </v-list-item>
 
-      <!-- 账户按钮 -->
       <v-list-item
         @click="dialog = true"
         class="styled-menu-item"
@@ -488,10 +474,8 @@ const changeLanguage = async (langCode: string) => {
       </v-list-item>
     </StyledMenu>
 
-    <!-- 更新对话框 -->
     <v-dialog v-model="updateStatusDialog" :width="$vuetify.display.smAndDown ? '100%' : '1200'"
       :fullscreen="$vuetify.display.xs">
-      <!-- activator button removed -->
       <v-card class="update-dialog-card">
         <v-card-title class="mobile-card-title">
           <span class="text-h5">{{ t('core.header.updateDialog.title') }}</span>
@@ -518,7 +502,6 @@ const changeLanguage = async (langCode: string) => {
                 {{ t('core.header.updateDialog.tipContinue') }}</small>
             </div>
 
-            <!-- 发行版 -->
             <div>
                 <div class="mb-4">
                   <small>{{ t('core.header.updateDialog.dockerTip') }} <a
@@ -600,7 +583,6 @@ const changeLanguage = async (langCode: string) => {
       </v-card>
     </v-dialog>
 
-    <!-- Release Notes Modal -->
     <v-dialog v-model="releaseNotesDialog" max-width="800">
       <v-card>
         <v-card-title class="text-h5">
@@ -619,7 +601,6 @@ const changeLanguage = async (langCode: string) => {
       </v-card>
     </v-dialog>
 
-    <!-- 账户对话框 -->
     <v-dialog v-model="dialog" persistent :max-width="$vuetify.display.xs ? '90%' : '500'">
       <v-card class="account-dialog">
         <v-card-text class="py-6">
@@ -677,7 +658,6 @@ const changeLanguage = async (langCode: string) => {
       </v-card>
     </v-dialog>
 
-    <!-- About 对话框 - 仅在 chat mode 下使用 -->
     <v-dialog v-model="aboutDialog"
       width="600">
       <v-card>
@@ -808,11 +788,6 @@ const changeLanguage = async (langCode: string) => {
 
 .action-btn {
   margin-right: 6px;
-}
-
-.language-flag {
-  font-size: 16px;
-  margin-right: 8px;
 }
 
 /* 移动端对话框标题样式 */

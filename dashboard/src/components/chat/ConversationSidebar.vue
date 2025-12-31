@@ -82,54 +82,57 @@
           </v-btn>
         </template>
         
-<v-menu 
-        :open-on-hover="!$vuetify.display.mobile"
-        :open-on-click="true"
-        :location="$vuetify.display.mobile ? 'bottom center' : 'end center'"
-        offset="10" 
-        :close-on-content-click="true"
-        transition="scale-transition"
-      >
-        <template v-slot:activator="{ props: activatorProps }">
-          <v-list-item 
-            v-bind="activatorProps" 
-            class="styled-menu-item" 
-            rounded="md"
-          >
-            <template v-slot:prepend>
-              <v-icon>mdi-translate</v-icon>
-            </template>
-            <v-list-item-title>{{ t('core.header.buttons.language') || 'Language' }}</v-list-item-title>
-            <template v-slot:append>
-              <v-icon size="small" color="medium-emphasis">
-                {{ $vuetify.display.mobile ? 'mdi-chevron-down' : 'mdi-chevron-right' }}
-              </v-icon>
-            </template>
-          </v-list-item>
-        </template>
-
-        <v-card class="styled-menu-card" elevation="8" rounded="lg">
-          <v-list density="compact" class="styled-menu-list pa-1">
-            <v-list-item
-              v-for="lang in languages"
-              :key="lang.code"
-              :value="lang.code"
-              @click="changeLanguage(lang.code)"
-              :class="{ 'styled-menu-item-active': currentLocale === lang.code }"
-              class="styled-menu-item"
+        <v-menu 
+          :open-on-hover="!$vuetify.display.mobile"
+          :open-on-click="true"
+          :location="$vuetify.display.mobile ? 'bottom center' : 'end center'"
+          offset="10" 
+          :close-on-content-click="true"
+          transition="scale-transition"
+        >
+          <template v-slot:activator="{ props: activatorProps }">
+            <v-list-item 
+              v-bind="activatorProps" 
+              class="styled-menu-item" 
               rounded="md"
             >
               <template v-slot:prepend>
-                <span style="margin-right: 12px; font-size: 16px;">{{ lang.flag }}</span>
+                <v-icon>mdi-translate</v-icon>
               </template>
-              <v-list-item-title>{{ lang.name }}</v-list-item-title>
-              <template v-slot:append v-if="currentLocale === lang.code">
-                <v-icon color="primary" size="small">mdi-check</v-icon>
+              <v-list-item-title>{{ t('core.header.buttons.language') || 'Language' }}</v-list-item-title>
+              <template v-slot:append>
+                <v-icon size="small" color="medium-emphasis">
+                  {{ $vuetify.display.mobile ? 'mdi-chevron-down' : 'mdi-chevron-right' }}
+                </v-icon>
               </template>
             </v-list-item>
-          </v-list>
-        </v-card>
-      </v-menu>
+          </template>
+
+          <v-card class="styled-menu-card" elevation="8" rounded="lg">
+            <v-list density="compact" class="styled-menu-list pa-1">
+              <v-list-item
+                v-for="lang in languageOptions"
+                :key="lang.value"
+                :value="lang.value"
+                @click="changeLanguage(lang.value)"
+                :class="{ 'styled-menu-item-active': currentLocale === lang.value }"
+                class="styled-menu-item"
+                rounded="md"
+              >
+                <template v-slot:prepend>
+                  <span 
+                    class="language-flag-styled" 
+                    :style="{ backgroundImage: `url(${lang.flagUrl})` }"
+                  ></span>
+                </template>
+                <v-list-item-title>{{ lang.label }}</v-list-item-title>
+                <template v-slot:append v-if="currentLocale === lang.value">
+                  <v-icon color="primary" size="small">mdi-check</v-icon>
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-card>
+        </v-menu>
         
         <v-list-item class="styled-menu-item" @click="$emit('toggleTheme')">
           <template v-slot:prepend>
@@ -194,19 +197,12 @@ const { tm } = useModuleI18n('features/chat');
 const sidebarCollapsed = ref(true);
 const showProviderConfigDialog = ref(false);
 const { languageOptions, switchLanguage, locale } = useLanguageSwitcher();
-
-const languages = computed(() => 
-  languageOptions.value.map(lang => ({
-    code: lang.value,
-    name: lang.label,
-    flag: lang.flag
-  }))
-);
-
 const currentLocale = computed(() => locale.value);
+
 const changeLanguage = async (langCode: string) => {
   await switchLanguage(langCode as Locale);
 };
+
 const savedCollapsedState = localStorage.getItem('sidebarCollapsed');
 if (savedCollapsedState !== null) {
   sidebarCollapsed.value = JSON.parse(savedCollapsedState);
@@ -239,14 +235,14 @@ function handleDeleteConversation(session: Session) {
   height: 100%;
   max-height: 100%;
   position: relative;
-  transition: all 0.3s ease;
+  
   overflow: hidden;
 }
 
 .sidebar-collapsed {
   max-width: 60px;
   min-width: 60px;
-  transition: all 0.3s ease;
+  
 }
 
 .mobile-sidebar {
@@ -257,7 +253,6 @@ function handleDeleteConversation(session: Session) {
   max-width: 280px !important;
   min-width: 280px !important;
   transform: translateX(-100%);
-  transition: transform 0.3s ease;
   z-index: 1000;
 }
 
@@ -306,13 +301,13 @@ function handleDeleteConversation(session: Session) {
   gap: 4px;
   opacity: 0;
   visibility: hidden;
-  transition: all 0.2s ease;
+  
 }
 
 .edit-title-btn,
 .delete-conversation-btn {
   opacity: 0.7;
-  transition: opacity 0.2s ease;
+  
 }
 
 .edit-title-btn:hover,
@@ -325,7 +320,7 @@ function handleDeleteConversation(session: Session) {
   font-size: 14px;
   line-height: 1.3;
   margin-bottom: 2px;
-  transition: opacity 0.25s ease;
+  
 }
 
 .no-conversations {
@@ -341,7 +336,7 @@ function handleDeleteConversation(session: Session) {
 .no-conversations-text {
   font-size: 14px;
   color: var(--v-theme-secondaryText);
-  transition: opacity 0.25s ease;
+  
 }
 
 .sidebar-spacer {
@@ -385,7 +380,7 @@ function handleDeleteConversation(session: Session) {
 
 :deep(.styled-menu-item) {
   margin: 2px 0;
-  transition: all 0.2s ease;
+  
   border-radius: 6px;
 }
 

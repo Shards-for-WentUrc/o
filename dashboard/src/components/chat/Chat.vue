@@ -124,7 +124,6 @@ import { useRouter, useRoute } from 'vue-router';
 import { useCustomizerStore } from '@/stores/customizer';
 import { useI18n, useModuleI18n } from '@/i18n/composables';
 import { useTheme } from 'vuetify';
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher.vue';
 import MessageList from '@/components/chat/MessageList.vue';
 import ConversationSidebar from '@/components/chat/ConversationSidebar.vue';
 import ChatInput from '@/components/chat/ChatInput.vue';
@@ -493,7 +492,7 @@ onBeforeUnmount(() => {
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 999;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.2s ease;
 }
 
 .chat-content-panel {
@@ -511,6 +510,7 @@ onBeforeUnmount(() => {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    background-color: rgb(var(--v-theme-surface));
 }
 
 .message-list-fade {
@@ -518,14 +518,16 @@ onBeforeUnmount(() => {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 40px;
-    background: linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+    height: 60px; 
+    background: linear-gradient(
+        to top, 
+        rgb(var(--v-theme-surface)) 0%, 
+        rgba(var(--v-theme-surface), 0) 100%
+    );
+    
     pointer-events: none;
-    z-index: 1;
-}
-
-.message-list-fade.fade-dark {
-    background: linear-gradient(to top, rgba(30, 30, 30, 1) 0%, rgba(30, 30, 30, 0) 100%);
+    z-index: 10; 
+    
 }
 
 .conversation-header {
