@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import AuthLogin from '../authForms/AuthLogin.vue';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher.vue';
-import axios from 'axios';
 import { useModuleI18n } from '@/i18n/composables';
 import { useAuthStore } from '@/stores/auth';
 import { useCustomizerStore } from '@/stores/customizer';
@@ -59,7 +58,7 @@ const heroImageRef = ref<HTMLImageElement | null>(null);
 const heroImageLoaded = ref(false);
 type HeroImageMode = 'proxy' | 'primary' | 'fallback';
 const heroImageMode = ref<HeroImageMode>('fallback');
-const heroImageFallback = 'https://www.bing.com/th?id=OHR.ShenandoahTrail_ZH-CN8626326726_1920x1080.jpg';
+const heroImageFallback = 'https://api.revaea.com/pc';
 
 const heroImageUrl = computed(() => {
   if (heroImageMode.value === 'proxy') {
@@ -548,6 +547,7 @@ onUnmounted(() => {
   .mui-login__visual {
     flex: 0 0 35vh;
     height: 35vh;
+    z-index: 10;
   }
 
   .mui-login__panel {
@@ -558,6 +558,17 @@ onUnmounted(() => {
     border-radius: 0;
     overflow-y: auto;
     animation-duration: 0.8s, 2s;
+    position: relative;
+    background: rgba(var(--v-theme-surface), 0.85);
+    z-index: 0;
+
+    :deep(.v-btn--variant-elevated),
+    :deep(button[type="submit"]) {
+      width: 100% !important;      
+      display: flex !important;         
+      justify-content: center;   
+      margin-top: 20px !important;  
+    }
   }
 
   .mui-login__copy {
