@@ -334,9 +334,9 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 20px;
+  border-radius: 50px;
   background: rgba(var(--v-theme-surface), 0.85);
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.15);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
   backdrop-filter: blur(12px);
   z-index: 2;
@@ -344,7 +344,6 @@ onUnmounted(() => {
 }
 
 .visual-controls:hover {
-  border-color: rgba(var(--v-theme-primary), 0.32);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
   transform: translateY(-2px);
 }
