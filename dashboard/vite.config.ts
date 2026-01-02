@@ -24,7 +24,8 @@ export default defineConfig(async () => {
         // 添加了 mermaid 支持
         'mermaid': 'mermaid/dist/mermaid.js',
         '@': fileURLToPath(new URL('./src', import.meta.url))
-      }
+      },
+      extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json']
     },
     css: {
       preprocessorOptions: {
