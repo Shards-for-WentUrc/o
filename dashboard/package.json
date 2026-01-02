@@ -29,8 +29,6 @@
     "js-md5": "^0.8.3",
     "katex": "^0.16.27",
     "lodash": "4.17.21",
-    "markdown-it": "^14.1.0",
-    "marked": "^15.0.7",
     "markstream-vue": "0.0.3-beta.7",
     "mermaid": "^11.12.2",
     "pinia": "2.1.6",
