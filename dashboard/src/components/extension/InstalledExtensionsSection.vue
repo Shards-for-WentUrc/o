@@ -83,19 +83,19 @@
             <div class="d-flex align-center py-2">
               <div class="mr-3" style="flex-shrink: 0;">
                 <img
-                  :src="item.logo || defaultPluginIcon"
-                  :alt="item.name"
+                  :src="resolveRow(item).logo || defaultPluginIcon"
+                  :alt="resolveRow(item).name"
                   style="height: 40px; width: 40px; border-radius: 8px; object-fit: cover;"
                 />
               </div>
               <div>
                 <div class="text-subtitle-1 font-weight-medium">
-                  {{ item.display_name && item.display_name.length ? item.display_name : item.name }}
+                  {{ resolveRow(item).display_name && resolveRow(item).display_name.length ? resolveRow(item).display_name : resolveRow(item).name }}
                 </div>
-                <div v-if="item.display_name && item.display_name.length" class="text-caption text-medium-emphasis mt-1">
-                  {{ item.name }}
+                <div v-if="resolveRow(item).display_name && resolveRow(item).display_name.length" class="text-caption text-medium-emphasis mt-1">
+                  {{ resolveRow(item).name }}
                 </div>
-                <div v-if="item.reserved" class="d-flex align-center mt-1">
+                <div v-if="resolveRow(item).reserved" class="d-flex align-center mt-1">
                   <v-chip color="primary" size="x-small" class="font-weight-medium">{{ tm('status.system') }}</v-chip>
                 </div>
               </div>
@@ -103,67 +103,67 @@
           </template>
 
           <template v-slot:item.desc="{ item }">
-            <div class="text-body-2 text-medium-emphasis">{{ item.desc }}</div>
+            <div class="text-body-2 text-medium-emphasis">{{ resolveRow(item).desc }}</div>
           </template>
 
           <template v-slot:item.version="{ item }">
             <div class="d-flex align-center">
-              <span class="text-body-2">{{ item.version }}</span>
-              <v-icon v-if="item.has_update" color="warning" size="small" class="ml-1">mdi-alert</v-icon>
-              <v-tooltip v-if="item.has_update" activator="parent">
-                <span>{{ tm('messages.hasUpdate') }} {{ item.online_version }}</span>
+              <span class="text-body-2">{{ resolveRow(item).version }}</span>
+              <v-icon v-if="resolveRow(item).has_update" color="warning" size="small" class="ml-1">mdi-alert</v-icon>
+              <v-tooltip v-if="resolveRow(item).has_update" activator="parent">
+                <span>{{ tm('messages.hasUpdate') }} {{ resolveRow(item).online_version }}</span>
               </v-tooltip>
             </div>
           </template>
 
           <template v-slot:item.author="{ item }">
-            <div class="text-body-2">{{ item.author }}</div>
+            <div class="text-body-2">{{ resolveRow(item).author }}</div>
           </template>
 
           <template v-slot:item.activated="{ item }">
-            <v-chip :color="item.activated ? 'success' : 'error'" size="small" class="font-weight-medium" :variant="item.activated ? 'flat' : 'outlined'">
-              {{ item.activated ? tm('status.enabled') : tm('status.disabled') }}
+            <v-chip :color="resolveRow(item).activated ? 'success' : 'error'" size="small" class="font-weight-medium" :variant="resolveRow(item).activated ? 'flat' : 'outlined'">
+              {{ resolveRow(item).activated ? tm('status.enabled') : tm('status.disabled') }}
             </v-chip>
           </template>
 
           <template v-slot:item.actions="{ item }">
             <div class="d-flex align-center">
               <v-btn-group density="comfortable" variant="text" color="primary">
-                <v-btn v-if="!item.activated" icon size="small" color="success" @click="emit('plugin-on', item)">
+                <v-btn v-if="!resolveRow(item).activated" icon size="small" color="success" @click="emit('plugin-on', resolveRow(item))">
                   <v-icon>mdi-play</v-icon>
                   <v-tooltip activator="parent" location="top">{{ tm('tooltips.enable') }}</v-tooltip>
                 </v-btn>
-                <v-btn v-else icon size="small" color="error" @click="emit('plugin-off', item)">
+                <v-btn v-else icon size="small" color="error" @click="emit('plugin-off', resolveRow(item))">
                   <v-icon>mdi-pause</v-icon>
                   <v-tooltip activator="parent" location="top">{{ tm('tooltips.disable') }}</v-tooltip>
                 </v-btn>
 
-                <v-btn icon size="small" color="info" @click="emit('reload', item.name)">
+                <v-btn icon size="small" color="info" @click="emit('reload', resolveRow(item).name)">
                   <v-icon>mdi-refresh</v-icon>
                   <v-tooltip activator="parent" location="top">{{ tm('tooltips.reload') }}</v-tooltip>
                 </v-btn>
 
-                <v-btn icon size="small" @click="emit('open-config', item.name)">
+                <v-btn icon size="small" @click="emit('open-config', resolveRow(item).name)">
                   <v-icon>mdi-cog</v-icon>
                   <v-tooltip activator="parent" location="top">{{ tm('tooltips.configure') }}</v-tooltip>
                 </v-btn>
 
-                <v-btn icon size="small" @click="emit('show-info', item)">
+                <v-btn icon size="small" @click="emit('show-info', resolveRow(item))">
                   <v-icon>mdi-information</v-icon>
                   <v-tooltip activator="parent" location="top">{{ tm('tooltips.viewInfo') }}</v-tooltip>
                 </v-btn>
 
-                <v-btn v-if="item.repo" icon size="small" @click="emit('view-readme', item)">
+                <v-btn v-if="resolveRow(item).repo" icon size="small" @click="emit('view-readme', resolveRow(item))">
                   <v-icon>mdi-book-open-page-variant</v-icon>
                   <v-tooltip activator="parent" location="top">{{ tm('tooltips.viewDocs') }}</v-tooltip>
                 </v-btn>
 
-                <v-btn icon size="small" color="warning" @click="emit('update-extension', item.name)" v-show="item.has_update">
+                <v-btn icon size="small" color="warning" @click="emit('update-extension', resolveRow(item).name)" v-show="resolveRow(item).has_update">
                   <v-icon>mdi-update</v-icon>
                   <v-tooltip activator="parent" location="top">{{ tm('tooltips.update') }}</v-tooltip>
                 </v-btn>
 
-                <v-btn icon size="small" color="error" @click="emit('uninstall', { extension: item })" :disabled="item.reserved">
+                <v-btn icon size="small" color="error" @click="emit('uninstall', { extension: resolveRow(item) })" :disabled="resolveRow(item).reserved">
                   <v-icon>mdi-delete</v-icon>
                   <v-tooltip activator="parent" location="top">{{ tm('tooltips.uninstall') }}</v-tooltip>
                 </v-btn>
@@ -249,6 +249,14 @@ const { tm } = useModuleI18n('features/extension')
 
 const updateIsListView = (value: boolean) => {
   emit('update:isListView', value)
+}
+
+const resolveRow = (row: unknown): InstalledPlugin => {
+  const maybeWrapper = row as { raw?: InstalledPlugin } | null
+  if (maybeWrapper && typeof maybeWrapper === 'object' && maybeWrapper.raw) {
+    return maybeWrapper.raw
+  }
+  return row as InstalledPlugin
 }
 
 const extensionMessage = computed(() => props.extensionMessage ?? '')
