@@ -1,6 +1,6 @@
 <template>
     <h5>GitHub 加速</h5>
-    <v-radio-group class="mt-2" v-model="radioValue" hide-details="true">
+    <v-radio-group class="mt-2" v-model="radioValue" :hide-details="true">
         <v-radio label="不使用 GitHub 加速" value="0"></v-radio>
         <v-radio value="1">
             <template v-slot:label>
@@ -14,7 +14,7 @@
     </v-radio-group>
     <v-expand-transition>
         <div v-if="radioValue === '1'" style="margin-left: 16px;">
-            <v-radio-group v-model="githubProxyRadioControl" class="mt-2" hide-details="true">
+            <v-radio-group v-model="githubProxyRadioControl" class="mt-2" :hide-details="true">
                 <v-radio color="success" v-for="(proxy, idx) in githubProxies" :key="proxy" :value="idx">
                     <template v-slot:label>
                         <div class="d-flex align-center">
@@ -39,7 +39,7 @@
                 <v-radio color="primary" value="-1" label="自定义">
                     <template v-slot:label v-if="githubProxyRadioControl === '-1'">
                         <v-text-field density="compact" v-model="selectedGitHubProxy" variant="outlined"
-                            style="width: 100vw;" placeholder="自定义" hide-details="true">
+                            style="width: 100vw;" placeholder="自定义" :hide-details="true">
                         </v-text-field>
                     </template>
                 </v-radio>
@@ -49,7 +49,7 @@
 </template>
 
 
-<script>
+<script lang="ts">
 import axios from 'axios';
 import { useModuleI18n } from '@/i18n/composables';
 

@@ -200,7 +200,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text @click="resetDialog = false">取消</v-btn>
+          <v-btn variant="text" @click="resetDialog = false">取消</v-btn>
           <v-btn color="warning" @click="confirmReset" :loading="resetLoading">确认重置</v-btn>
         </v-card-actions>
       </v-card>
@@ -215,7 +215,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text @click="deleteDialog = false">取消</v-btn>
+          <v-btn variant="text" @click="deleteDialog = false">取消</v-btn>
           <v-btn color="error" @click="confirmDelete" :loading="saveLoading">确认删除</v-btn>
         </v-card-actions>
       </v-card>
@@ -230,7 +230,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text @click="applyAndCloseDialog = false">取消</v-btn>
+          <v-btn variant="text" @click="applyAndCloseDialog = false">取消</v-btn>
           <v-btn color="primary" @click="confirmApplyAndClose" :loading="saveLoading">确认</v-btn>
         </v-card-actions>
       </v-card>
@@ -239,7 +239,7 @@
   </v-dialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue'
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
 import { useI18n } from '@/i18n/composables'
@@ -272,7 +272,7 @@ const previewFrame = ref(null)
 
 // --- 编辑器配置 ---
 const editorTheme = computed(() => 'vs-light')
-const editorOptions = {
+const editorOptions: any = {
   automaticLayout: true,
   fontSize: 12,
   lineNumbers: 'on',

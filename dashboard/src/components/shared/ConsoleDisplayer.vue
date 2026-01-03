@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useCommonStore } from '@/stores/common';
 import axios from 'axios';
 import { EventSourcePolyfill } from 'event-source-polyfill';
@@ -20,7 +20,7 @@ import { EventSourcePolyfill } from 'event-source-polyfill';
   </div>
 </template>
 
-<script>
+<script lang="ts">
 export default {
   name: 'ConsoleDisplayer',
   data() {
@@ -269,7 +269,9 @@ export default {
         }
       }
 
-      span.style = style + 'display: block; font-size: 12px; font-family: Consolas, monospace; white-space: pre-wrap; margin-bottom: 2px;'
+      span.style.cssText =
+        style +
+        'display: block; font-size: 12px; font-family: Consolas, monospace; white-space: pre-wrap; margin-bottom: 2px;'
       span.classList.add('fade-in')
       span.innerText = `${log}`;
       ele.appendChild(span)

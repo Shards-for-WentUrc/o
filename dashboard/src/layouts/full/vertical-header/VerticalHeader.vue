@@ -6,10 +6,7 @@ import Logo from '@/components/shared/Logo.vue';
 import { md5 } from 'js-md5';
 import { useAuthStore } from '@/stores/auth';
 import { useCommonStore } from '@/stores/common';
-import { MarkdownRender, enableKatex, enableMermaid } from 'markstream-vue';
-import 'markstream-vue/index.css';
-import 'katex/dist/katex.min.css';
-import 'highlight.js/styles/github.css';
+import MarkdownContent from '@/components/shared/MarkdownContent.vue';
 import { useI18n } from '@/i18n/composables';
 import { router } from '@/router';
 import { useRoute } from 'vue-router';
@@ -19,8 +16,6 @@ import { useLanguageSwitcher } from '@/i18n/composables';
 import type { Locale } from '@/i18n/types';
 import AboutPage from '@/views/AboutPage.vue';
 
-enableKatex();
-enableMermaid();
 
 const customizer = useCustomizerStore();
 const theme = useTheme();
@@ -45,6 +40,21 @@ let version = ref('');
 let releases = ref([]);
 let updatingDashboardLoading = ref(false);
 let installLoading = ref(false);
+
+type UpdateChannel = 'official' | 'landfill'
+
+const updateChannel = ref<UpdateChannel>(
+  (localStorage.getItem('selectedUpdateChannel') as UpdateChannel) || 'official'
+)
+
+watch(updateChannel, (val) => {
+  localStorage.setItem('selectedUpdateChannel', val)
+})
+
+const updateChannelOptions = computed(() => [
+  { title: t('core.header.updateDialog.channel.official'), value: 'official' },
+  { title: t('core.header.updateDialog.channel.landfill'), value: 'landfill' }
+])
 
 // Release Notes Modal
 let releaseNotesDialog = ref(false);
@@ -160,7 +170,7 @@ function getVersion() {
 
 function checkUpdate() {
   updateStatus.value = t('core.header.updateDialog.status.checking');
-  axios.get('/api/update/check')
+  axios.get('/api/update/check', { params: { channel: updateChannel.value } })
     .then((res) => {
       hasNewVersion.value = res.data.data.has_new_version;
 
@@ -185,7 +195,7 @@ function checkUpdate() {
 }
 
 function getReleases() {
-  axios.get('/api/update/releases')
+  axios.get('/api/update/releases', { params: { channel: updateChannel.value } })
     .then((res) => {
       releases.value = res.data.data.map((item: any) => {
         item.published_at = new Date(item.published_at).toLocaleString();
@@ -197,6 +207,12 @@ function getReleases() {
     });
 }
 
+function openUpdateDialog() {
+  updateStatusDialog.value = true
+  checkUpdate()
+  getReleases()
+}
+
 
 
 function switchVersion(version: string) {
@@ -204,7 +220,8 @@ function switchVersion(version: string) {
   installLoading.value = true;
   axios.post('/api/update/do', {
     version: version,
-    proxy: localStorage.getItem('selectedGitHubProxy') || ''
+    proxy: localStorage.getItem('selectedGitHubProxy') || '',
+    channel: updateChannel.value
   })
     .then((res) => {
       updateStatus.value = res.data.message;
@@ -220,6 +237,32 @@ function switchVersion(version: string) {
     }).finally(() => {
       installLoading.value = false;
     });
+}
+
+function updateToLatestFromChannel() {
+  updateStatus.value = t('core.header.updateDialog.status.switching')
+  installLoading.value = true
+  axios
+    .post('/api/update/do', {
+      version: 'latest',
+      proxy: localStorage.getItem('selectedGitHubProxy') || '',
+      channel: updateChannel.value
+    })
+    .then((res) => {
+      updateStatus.value = res.data.message
+      if (res.data.status == 'ok') {
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
+      }
+    })
+    .catch((err) => {
+      console.log(err)
+      updateStatus.value = err
+    })
+    .finally(() => {
+      installLoading.value = false
+    })
 }
 
 function updateDashboard() {
@@ -297,13 +340,6 @@ const isChristmas = computed(() => {
 
 // 语言切换相关
 const { languageOptions, currentLanguage, switchLanguage, locale } = useLanguageSwitcher();
-const languages = computed(() => 
-  languageOptions.value.map(lang => ({
-    code: lang.value,
-    name: lang.label,
-    flag: lang.flag
-  }))
-);
 const currentLocale = computed(() => locale.value);
 const changeLanguage = async (langCode: string) => {
   await switchLanguage(langCode as Locale);
@@ -314,7 +350,6 @@ const changeLanguage = async (langCode: string) => {
 <template>
   <v-app-bar elevation="0" height="55">
 
-    <!-- 桌面端 menu 按钮 - 仅在 bot 模式下显示 -->
     <v-btn v-if="customizer.viewMode === 'bot' && useCustomizerStore().uiTheme === 'PurpleTheme'" style="margin-left: 16px;"
       class="hidden-md-and-down"  icon rounded="sm" variant="flat"
       @click.stop="customizer.SET_MINI_SIDEBAR(!customizer.mini_sidebar)">
@@ -326,7 +361,6 @@ const changeLanguage = async (langCode: string) => {
       @click.stop="customizer.SET_MINI_SIDEBAR(!customizer.mini_sidebar)">
       <v-icon>mdi-menu</v-icon>
     </v-btn>
-    <!-- 移动端 menu 按钮 - 仅在 bot 模式下显示 -->
     <v-btn v-if="customizer.viewMode === 'bot' && useCustomizerStore().uiTheme === 'PurpleTheme'" class="hidden-lg-and-up ms-3"
       icon rounded="sm" variant="flat" @click.stop="customizer.SET_SIDEBAR_DRAWER">
       <v-icon>mdi-menu</v-icon>
@@ -346,7 +380,6 @@ const changeLanguage = async (langCode: string) => {
 
   <v-spacer />
 
-    <!-- 版本提示信息 - 在手机上隐藏 -->
     <div class="mr-4 hidden-xs">
       <small v-if="hasNewVersion">
         {{ t('core.header.version.hasNewVersion') }}
@@ -356,7 +389,6 @@ const changeLanguage = async (langCode: string) => {
       </small>
     </div>
     
-    <!-- Bot/Chat 模式切换按钮 -->
     <v-btn-toggle
       v-model="viewMode"
       mandatory
@@ -376,7 +408,6 @@ const changeLanguage = async (langCode: string) => {
     </v-btn-toggle>
 
 
-    <!-- 功能菜单 -->
     <StyledMenu offset="12" location="bottom end">
       <template v-slot:activator="{ props: activatorProps }">
         <v-btn
@@ -392,23 +423,59 @@ const changeLanguage = async (langCode: string) => {
         </v-btn>
       </template>
 
-      <!-- 语言切换 -->
-      <v-list-item
-        v-for="lang in languages"
-        :key="lang.code"
-        :value="lang.code"
-        @click="changeLanguage(lang.code)"
-        :class="{ 'styled-menu-item-active': currentLocale === lang.code }"
-        class="styled-menu-item"
-        rounded="md"
+      <v-menu 
+        :open-on-hover="!$vuetify.display.mobile"
+        :open-on-click="true"
+        :location="$vuetify.display.mobile ? 'bottom center' : 'start top'"
+        :origin="$vuetify.display.mobile ? 'top center' : 'end top'"
+        offset="12" 
+        :close-on-content-click="true"
+        transition="scale-transition"
       >
-        <template v-slot:prepend>
-          <span class="language-flag">{{ lang.flag }}</span>
+        <template v-slot:activator="{ props: activatorProps }">
+          <v-list-item 
+             v-bind="activatorProps" 
+             class="styled-menu-item" 
+             rounded="md"
+             @click.stop
+          >
+            <template v-slot:prepend>
+              <v-icon>mdi-translate</v-icon>
+            </template>
+            <v-list-item-title>{{ t('core.header.buttons.language') || 'Language' }}</v-list-item-title>
+            <template v-slot:append>
+              <v-icon size="small" color="medium-emphasis">
+                {{ $vuetify.display.mobile ? 'mdi-chevron-down' : 'mdi-chevron-right' }}
+              </v-icon>
+            </template>
+          </v-list-item>
         </template>
-        <v-list-item-title>{{ lang.name }}</v-list-item-title>
-      </v-list-item>
 
-      <!-- 主题切换 -->
+        <v-card class="language-dropdown" elevation="8" rounded="lg">
+          <v-list density="compact" class="pa-1">
+             <v-list-item
+               v-for="lang in languageOptions"
+               :key="lang.value"
+               :value="lang.value"
+               @click="changeLanguage(lang.value)"
+               :class="{ 'language-item-selected': currentLocale === lang.value }"
+               class="language-item"
+               rounded="md"
+             >
+               <template v-slot:prepend>
+                 <span 
+                    :class="['fi', `fi-${lang.flag}`, 'language-flag-styled']"
+                 ></span>
+               </template>
+               <v-list-item-title>{{ lang.label }}</v-list-item-title>
+               <template v-slot:append v-if="currentLocale === lang.value">
+                  <v-icon color="primary" size="small">mdi-check</v-icon>
+               </template>
+             </v-list-item>
+          </v-list>
+        </v-card>
+      </v-menu>
+
       <v-list-item
         @click="toggleDarkMode()"
         class="styled-menu-item"
@@ -424,9 +491,8 @@ const changeLanguage = async (langCode: string) => {
         </v-list-item-title>
       </v-list-item>
 
-      <!-- 更新按钮 -->
       <v-list-item
-        @click="checkUpdate(); getReleases(); updateStatusDialog = true"
+        @click="openUpdateDialog"
         class="styled-menu-item"
         rounded="md"
       >
@@ -439,7 +505,6 @@ const changeLanguage = async (langCode: string) => {
         </template>
       </v-list-item>
 
-      <!-- 账户按钮 -->
       <v-list-item
         @click="dialog = true"
         class="styled-menu-item"
@@ -452,17 +517,16 @@ const changeLanguage = async (langCode: string) => {
       </v-list-item>
     </StyledMenu>
 
-    <!-- 更新对话框 -->
     <v-dialog v-model="updateStatusDialog" :width="$vuetify.display.smAndDown ? '100%' : '1200'"
       :fullscreen="$vuetify.display.xs">
-      <v-card>
+      <v-card class="update-dialog-card">
         <v-card-title class="mobile-card-title">
           <span class="text-h5">{{ t('core.header.updateDialog.title') }}</span>
           <v-btn v-if="$vuetify.display.xs" icon @click="updateStatusDialog = false">
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="update-dialog-content">
           <v-container>
             <v-progress-linear v-show="installLoading" class="mb-4" indeterminate color="primary"></v-progress-linear>
 
@@ -471,9 +535,23 @@ const changeLanguage = async (langCode: string) => {
               <small style="margin-left: 4px;">{{ updateStatus }}</small>
             </div>
 
+            <div class="mt-4">
+              <v-select
+                v-model="updateChannel"
+                :items="updateChannelOptions"
+                item-title="title"
+                item-value="value"
+                density="comfortable"
+                variant="outlined"
+                style="max-width: 520px;"
+                :label="t('core.header.updateDialog.channel.label')"
+                @update:model-value="() => { checkUpdate(); getReleases(); }"
+              />
+            </div>
+
             <div v-if="releaseMessage"
               style="background-color: #646cff24; padding: 16px; border-radius: 10px; font-size: 14px; max-height: 400px; overflow-y: auto;">
-              <MarkdownRender :content="releaseMessage" :typewriter="false" class="markdown-content" />
+              <MarkdownContent :content="releaseMessage" :typewriter="false" />
             </div>
 
             <div class="mb-4 mt-4">
@@ -481,8 +559,7 @@ const changeLanguage = async (langCode: string) => {
                 {{ t('core.header.updateDialog.tipContinue') }}</small>
             </div>
 
-            <!-- 发行版 -->
-            <div>
+            <div v-if="updateChannel === 'official'">
                 <div class="mb-4">
                   <small>{{ t('core.header.updateDialog.dockerTip') }} <a
                       href="https://containrrr.dev/watchtower/usage-overview/">{{
@@ -528,6 +605,20 @@ const changeLanguage = async (langCode: string) => {
                 </v-data-table>
             </div>
 
+            <div v-else class="mt-2">
+              <v-alert type="info" variant="tonal" border="start" class="mb-4">
+                {{ t('core.header.updateDialog.channel.landfillTip') }}
+              </v-alert>
+              <v-btn
+                color="primary"
+                style="border-radius: 10px;"
+                @click="updateToLatestFromChannel"
+                :loading="installLoading"
+              >
+                {{ t('core.header.updateDialog.channel.updateLatest') }}
+              </v-btn>
+            </div>
+
             <v-divider class="mt-4 mb-4"></v-divider>
             <div style="margin-top: 16px;">
               <h3 class="mb-4">{{ t('core.header.updateDialog.dashboardUpdate.title') }}</h3>
@@ -554,7 +645,7 @@ const changeLanguage = async (langCode: string) => {
             </div>
           </v-container>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="update-dialog-actions">
           <v-spacer></v-spacer>
           <v-btn color="blue-darken-1" variant="text" @click="updateStatusDialog = false">
             {{ t('core.common.close') }}
@@ -563,7 +654,6 @@ const changeLanguage = async (langCode: string) => {
       </v-card>
     </v-dialog>
 
-    <!-- Release Notes Modal -->
     <v-dialog v-model="releaseNotesDialog" max-width="800">
       <v-card>
         <v-card-title class="text-h5">
@@ -571,7 +661,7 @@ const changeLanguage = async (langCode: string) => {
         </v-card-title>
         <v-card-text
           style="font-size: 14px; max-height: 400px; overflow-y: auto;">
-          <MarkdownRender :content="selectedReleaseNotes" :typewriter="false" class="markdown-content" />
+          <MarkdownContent :content="selectedReleaseNotes" :typewriter="false" />
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -582,7 +672,6 @@ const changeLanguage = async (langCode: string) => {
       </v-card>
     </v-dialog>
 
-    <!-- 账户对话框 -->
     <v-dialog v-model="dialog" persistent :max-width="$vuetify.display.xs ? '90%' : '500'">
       <v-card class="account-dialog">
         <v-card-text class="py-6">
@@ -640,7 +729,6 @@ const changeLanguage = async (langCode: string) => {
       </v-card>
     </v-dialog>
 
-    <!-- About 对话框 - 仅在 chat mode 下使用 -->
     <v-dialog v-model="aboutDialog"
       width="600">
       <v-card>
@@ -653,24 +741,6 @@ const changeLanguage = async (langCode: string) => {
 </template>
 
 <style>
-.markdown-content h1 {
-  font-size: 1.3em;
-}
-
-.markdown-content ol {
-  padding-left: 24px;
-  /* Adds indentation to ordered lists */
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
-
-.markdown-content ul {
-  padding-left: 24px;
-  /* Adds indentation to unordered lists */
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
-
 .account-dialog .v-card-text {
   padding-top: 24px;
   padding-bottom: 24px;
@@ -684,6 +754,34 @@ const changeLanguage = async (langCode: string) => {
   text-transform: none;
   font-weight: 500;
   border-radius: 8px;
+}
+
+.update-dialog-card {
+  display: flex;
+  flex-direction: column;
+  max-height: min(90vh, 780px);
+}
+
+.update-dialog-card .mobile-card-title {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--v-theme-surface);
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+}
+
+.update-dialog-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.update-dialog-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--v-theme-surface);
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
 }
 
 .account-dialog .v-avatar {
@@ -745,16 +843,57 @@ const changeLanguage = async (langCode: string) => {
   margin-right: 6px;
 }
 
-.language-flag {
-  font-size: 16px;
-  margin-right: 8px;
-}
-
 /* 移动端对话框标题样式 */
 .mobile-card-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.language-dropdown {
+  min-width: 100px;
+  width: fit-content;
+  border: 1px solid rgba(var(--v-theme-on-surface),0.01) !important;
+  background: rgb(var(--v-theme-surface)) !important;
+  backdrop-filter: blur(10px);
+}
+
+.v-theme--PurpleThemeDark .language-dropdown {
+  background: rgb(var(--v-theme-surface)) !important;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.15) !important;
+}
+
+.language-item {
+  margin: 2px 0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.language-item:hover {
+  background: rgba(var(--v-theme-primary), 0.12) !important;
+}
+
+.language-item-selected {
+  background: rgba(var(--v-theme-primary), 0.16) !important;
+  color: rgb(var(--v-theme-primary)) !important;
+  font-weight: 600;
+}
+
+.language-item-selected:hover {
+  background: rgba(var(--v-theme-primary), 0.24) !important;
+}
+
+.v-theme--PurpleThemeDark .language-item:hover {
+  background: rgba(var(--v-theme-primary), 0.18) !important;
+}
+
+.v-theme--PurpleThemeDark .language-item-selected {
+  background: rgba(var(--v-theme-primary), 0.24) !important;
+  color: rgb(var(--v-theme-primary)) !important;
+}
+
+.v-theme--PurpleThemeDark .language-item-selected:hover {
+  background: rgba(var(--v-theme-primary), 0.32) !important;
 }
 
 /* 移动端样式优化 */

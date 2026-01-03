@@ -63,13 +63,13 @@
             </v-card-text>
             <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn text @click="closeDialog">{{ tm('dialogs.config.cancel') }}</v-btn>
+                <v-btn variant="text" @click="closeDialog">{{ tm('dialogs.config.cancel') }}</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
 
-<script>
+<script lang="ts">
 import { useModuleI18n } from '@/i18n/composables';
 import { getProviderIcon, getProviderDescription } from '@/utils/providerUtils';
 
@@ -112,12 +112,13 @@ export default {
 
         // 按提供商类型获取模板列表
         getTemplatesByType(type) {
-            const templates = this.metadata.provider.config_template || {};
-            const filtered = {};
+            const templates = (this.metadata as any)?.provider?.config_template || {};
+            const filtered: Record<string, any> = {};
 
-            for (const [name, template] of Object.entries(templates)) {
-                if (template.provider_type === type) {
-                    filtered[name] = template;
+            for (const [name, template] of Object.entries(templates as Record<string, any>)) {
+                const tpl = template as any;
+                if (tpl?.provider_type === type) {
+                    filtered[name] = tpl;
                 }
             }
 

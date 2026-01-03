@@ -45,22 +45,6 @@
     "waiting": "Waiting for AstrBot to restart...",
     "maxRetriesReached": "Maximum retry attempts reached, please check manually."
   },
-  "readme": {
-    "title": "Extension Documentation",
-    "buttons": {
-      "viewOnGithub": "View Repository on GitHub",
-      "refresh": "Refresh Documentation"
-    },
-    "loading": "Loading README documentation...",
-    "errors": {
-      "fetchFailed": "Failed to fetch README",
-      "fetchError": "Error occurred while fetching README"
-    },
-    "empty": {
-      "title": "This extension does not provide documentation link or GitHub repository address.",
-      "subtitle": "Please check the extension marketplace or contact the extension author for more information."
-    }
-  },
   "editor": {
     "fullscreen": "Fullscreen Edit",
     "editingTitle": "Editing Content"
@@ -92,7 +76,10 @@
     "disabled": "Disabled",
     "delete": "Delete",
     "edit": "Edit",
-    "copy": "Copy",
     "noData": "No data available"
+  },
+  "error404": {
+    "returnHome": "Return Home",
+    "goBack": "Go Back"
   }
 }

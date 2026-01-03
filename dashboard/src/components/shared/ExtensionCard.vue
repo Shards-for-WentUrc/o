@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, inject } from 'vue';
+import { ref, inject, useAttrs } from 'vue';
 import { useCustomizerStore } from "@/stores/customizer";
 import { useModuleI18n } from '@/i18n/composables';
 import UninstallConfirmDialog from './UninstallConfirmDialog.vue';
@@ -75,10 +75,12 @@ const viewHandlers = () => {
 const viewReadme = () => {
   emit('view-readme', props.extension);
 };
+
+const attrs = useAttrs();
 </script>
 
 <template>
-  <v-card class="mx-auto d-flex flex-column" elevation="0" :style="{
+  <v-card v-bind="attrs" class="mx-auto d-flex flex-column" elevation="0" :style="{
     position: 'relative',
     backgroundColor: useCustomizerStore().uiTheme === 'PurpleTheme' ? marketMode ? '#f8f0dd' : '#ffffff' : '#282833',
     color: useCustomizerStore().uiTheme === 'PurpleTheme' ? '#000000dd' : '#ffffff'
@@ -103,7 +105,7 @@ const viewReadme = () => {
             </template>
 
             <v-list>
-              <v-list-item @click="viewReadme">
+              <v-list-item v-if="extension?.repo" @click="viewReadme">
                 <v-list-item-title>📄 {{ tm('buttons.viewDocs') }}</v-list-item-title>
               </v-list-item>
 
@@ -205,7 +207,7 @@ const viewReadme = () => {
     </v-card-text>
 
     <v-card-actions class="extension-actions">
-      <v-btn color="primary" size="small" @click="viewReadme">
+      <v-btn color="primary" size="small" :disabled="!extension?.repo" @click="viewReadme">
         {{ tm('buttons.viewDocs') }}
       </v-btn>
       <v-btn v-if="!marketMode" color="primary"  size="small" @click="configure">

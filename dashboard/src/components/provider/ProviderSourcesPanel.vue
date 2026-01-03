@@ -70,20 +70,21 @@
   </v-card>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
+import type { PropType } from 'vue'
 
 const props = defineProps({
   displayedProviderSources: {
-    type: Array,
+    type: Array as PropType<any[]>,
     default: () => []
   },
   selectedProviderSource: {
-    type: Object,
+    type: Object as PropType<any>,
     default: null
   },
   availableSourceTypes: {
-    type: Array,
+    type: Array as PropType<any[]>,
     default: () => []
   },
   tm: {

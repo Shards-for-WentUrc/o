@@ -37,8 +37,8 @@ const checkMigration = async () => {
     if (response.data.status === 'ok' && response.data.data.need_migration) {
       // 需要迁移，显示迁移对话框
       if (migrationDialog.value && typeof migrationDialog.value.open === 'function') {
-        const result = await migrationDialog.value.open();
-        if (result.success) {
+        const result = (await migrationDialog.value.open()) as any;
+        if (result?.success) {
           // 迁移成功，可以显示成功消息
           console.log('Migration completed successfully:', result.message);
           // 可以考虑刷新页面或显示成功通知

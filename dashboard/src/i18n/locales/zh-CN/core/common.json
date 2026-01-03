@@ -45,22 +45,6 @@
     "waiting": "正在等待 AstrBot 重启...",
     "maxRetriesReached": "拉取状态达到最大次数，请手动检查。"
   },
-  "readme": {
-    "title": "插件说明文档",
-    "buttons": {
-      "viewOnGithub": "在GitHub中查看仓库",
-      "refresh": "刷新文档"
-    },
-    "loading": "正在加载README文档...",
-    "errors": {
-      "fetchFailed": "获取README失败",
-      "fetchError": "获取README时发生错误"
-    },
-    "empty": {
-      "title": "该插件未提供文档链接或GitHub仓库地址。",
-      "subtitle": "请查看插件市场或联系插件作者获取更多信息。"
-    }
-  },
   "editor": {
     "fullscreen": "全屏编辑",
     "editingTitle": "编辑内容"
@@ -94,5 +78,9 @@
     "edit": "编辑",
     "copy": "复制",
     "noData": "暂无数据"
+  },
+  "error404": {
+    "returnHome": "返回首页",
+    "goBack": "后退一步"
   }
 }

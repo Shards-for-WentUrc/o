@@ -158,15 +158,16 @@
   </v-dialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import type { PropType } from 'vue'
 import { useI18n } from '@/i18n/composables'
 
 const { t } = useI18n()
 
 const props = defineProps({
   modelValue: {
-    type: Array,
+    type: Array as PropType<string[]>,
     default: () => []
   },
   label: {
@@ -194,8 +195,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const dialog = ref(false)
-const localItems = ref([])
-const originalItems = ref([])
+const localItems = ref<string[]>([])
+const originalItems = ref<string[]>([])
 const newItem = ref('')
 const editIndex = ref(-1)
 const editItem = ref('')

@@ -54,7 +54,6 @@ class PluginRoute(Route):
             "/plugin/off": ("POST", self.off_plugin),
             "/plugin/on": ("POST", self.on_plugin),
             "/plugin/reload": ("POST", self.reload_plugins),
-            "/plugin/readme": ("GET", self.get_plugin_readme),
             "/plugin/source/get": ("GET", self.get_custom_source),
             "/plugin/source/save": ("POST", self.save_custom_source),
         }
@@ -283,7 +282,11 @@ class PluginRoute(Route):
             if token := self._logo_cache.get(logo_path):
                 if not await file_token_service.check_token_expired(token):
                     return self._logo_cache[logo_path]
-            token = await file_token_service.register_file(logo_path, timeout=300)
+            token = await file_token_service.register_file(
+                logo_path,
+                timeout=300,
+                consume_on_read=False,
+            )
             self._logo_cache[logo_path] = token
             return token
         except Exception as e:
@@ -564,56 +567,6 @@ class PluginRoute(Route):
         except Exception as e:
             logger.error(f"/api/plugin/on: {traceback.format_exc()}")
             return Response().error(str(e)).__dict__
-
-    async def get_plugin_readme(self):
-        plugin_name = request.args.get("name")
-        logger.debug(f"正在获取插件 {plugin_name} 的README文件内容")
-
-        if not plugin_name:
-            logger.warning("插件名称为空")
-            return Response().error("插件名称不能为空").__dict__
-
-        plugin_obj = None
-        for plugin in self.plugin_manager.context.get_all_stars():
-            if plugin.name == plugin_name:
-                plugin_obj = plugin
-                break
-
-        if not plugin_obj:
-            logger.warning(f"插件 {plugin_name} 不存在")
-            return Response().error(f"插件 {plugin_name} 不存在").__dict__
-
-        if not plugin_obj.root_dir_name:
-            logger.warning(f"插件 {plugin_name} 目录不存在")
-            return Response().error(f"插件 {plugin_name} 目录不存在").__dict__
-
-        plugin_dir = os.path.join(
-            self.plugin_manager.plugin_store_path,
-            plugin_obj.root_dir_name or "",
-        )
-
-        if not os.path.isdir(plugin_dir):
-            logger.warning(f"无法找到插件目录: {plugin_dir}")
-            return Response().error(f"无法找到插件 {plugin_name} 的目录").__dict__
-
-        readme_path = os.path.join(plugin_dir, "README.md")
-
-        if not os.path.isfile(readme_path):
-            logger.warning(f"插件 {plugin_name} 没有README文件")
-            return Response().error(f"插件 {plugin_name} 没有README文件").__dict__
-
-        try:
-            with open(readme_path, encoding="utf-8") as f:
-                readme_content = f.read()
-
-            return (
-                Response()
-                .ok({"content": readme_content}, "成功获取README内容")
-                .__dict__
-            )
-        except Exception as e:
-            logger.error(f"/api/plugin/readme: {traceback.format_exc()}")
-            return Response().error(f"读取README文件失败: {e!s}").__dict__
 
     async def get_custom_source(self):
         """获取自定义插件源"""

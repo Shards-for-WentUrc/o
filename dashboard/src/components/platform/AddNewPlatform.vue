@@ -83,7 +83,7 @@
 
             <div v-if="showConfigSection">
               <div v-if="!updatingMode">
-                <v-radio-group class="mt-2" v-model="aBConfigRadioVal" hide-details="true">
+                <v-radio-group class="mt-2" v-model="aBConfigRadioVal" :hide-details="true">
                   <v-radio value="0">
                     <template v-slot:label>
                       <span>使用现有配置文件</span>
@@ -224,7 +224,7 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn text @click="closeDialog">{{ tm('dialog.cancel') }}</v-btn>
+        <v-btn variant="text" @click="closeDialog">{{ tm('dialog.cancel') }}</v-btn>
         <v-btn :disabled="!canSave" color="primary" v-if="!updatingMode" @click="newPlatform" :loading="loading">{{
           tm('dialog.save') }}</v-btn>
         <v-btn :disabled="!selectedAbConfId" color="primary" v-else @click="newPlatform" :loading="loading">{{
@@ -304,7 +304,7 @@
 </template>
 
 
-<script>
+<script lang="ts">
 import axios from 'axios';
 import { useModuleI18n } from '@/i18n/composables';
 import { getPlatformIcon, getPlatformDescription, getTutorialLink } from '@/utils/platformUtils';
@@ -370,7 +370,7 @@ export default {
         { title: '消息会话来源(消息类型:会话 ID)', key: 'source', sortable: false, width: '60%' },
         { title: '使用配置文件', key: 'configId', sortable: false, width: '20%' },
         { title: '操作', key: 'actions', sortable: false, align: 'center', width: '20%' },
-      ],
+      ] as any,
       messageTypeOptions: [
         { label: '全部消息', value: '*' },
         { label: '群组消息(GroupMessage)', value: 'GroupMessage' },
@@ -986,7 +986,7 @@ export default {
     },
     scrollDialogToBottom() {
       const containerRef = this.$refs.dialogScrollContainer;
-      const el = containerRef?.$el || containerRef;
+      const el = (containerRef as any)?.$el || containerRef;
       if (!el) {
         return;
       }
