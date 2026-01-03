@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import InstalledExtensionsSection from '@/components/extension/InstalledExtensionsSection.vue';
-import MarketExtensionsSection from '@/components/extension/MarketExtensionsSection.vue';
-import AstrBotConfig from '@/components/shared/AstrBotConfig.vue';
-import ConsoleDisplayer from '@/components/shared/ConsoleDisplayer.vue';
-import ProxySelector from '@/components/shared/ProxySelector.vue';
-import UninstallConfirmDialog from '@/components/shared/UninstallConfirmDialog.vue';
-import McpServersSection from '@/components/extension/McpServersSection.vue';
-import ComponentPanel from '@/components/extension/componentPanel/index.vue';
+import { defineAsyncComponent } from 'vue';
+
 import type { PluginHandlerInfo } from '@/types/extension';
 import { useExtensionPage } from '@/composables/extension/useExtensionPage';
+
+const InstalledExtensionsSection = defineAsyncComponent(() => import('@/components/extension/InstalledExtensionsSection.vue'));
+const MarketExtensionsSection = defineAsyncComponent(() => import('@/components/extension/MarketExtensionsSection.vue'));
+const McpServersSection = defineAsyncComponent(() => import('@/components/extension/McpServersSection.vue'));
+const ComponentPanel = defineAsyncComponent(() => import('@/components/extension/componentPanel/index.vue'));
+const AstrBotConfig = defineAsyncComponent(() => import('@/components/shared/AstrBotConfig.vue'));
+const ConsoleDisplayer = defineAsyncComponent(() => import('@/components/shared/ConsoleDisplayer.vue'));
+const ProxySelector = defineAsyncComponent(() => import('@/components/shared/ProxySelector.vue'));
+const UninstallConfirmDialog = defineAsyncComponent(() => import('@/components/shared/UninstallConfirmDialog.vue'));
 
 const {
   tm,

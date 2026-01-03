@@ -1,4 +1,4 @@
-﻿import { onMounted, ref } from 'vue'
+﻿import { onMounted, ref, watch } from 'vue'
 
 import { useModuleI18n } from '@/i18n/composables'
 import { useCommonStore } from '@/stores/common'
@@ -21,6 +21,9 @@ export function useExtensionPage() {
   const { tm } = useModuleI18n('features/extension')
 
   const activeTab = ref<ExtensionActiveTab>('installed')
+
+  const marketFetchedKey = ref<string | null>(null)
+  const marketProcessedKey = ref<string | null>(null)
 
   const { snack_message, snack_show, snack_success, toast } = useSnackToast()
   const { loadingDialog, resetLoadingDialog, onLoadingDialogResult } = useLoadingDialog(tm)
@@ -56,7 +59,14 @@ export function useExtensionPage() {
     tm,
     toast,
     onSelectedChange: () => {
-      void refreshPluginMarket()
+      marketFetchedKey.value = null
+      marketProcessedKey.value = null
+
+      if (activeTab.value === 'market') {
+        void refreshPluginMarket()
+      } else {
+        void fetchMarketData(false)
+      }
     }
   })
 
@@ -71,13 +81,47 @@ export function useExtensionPage() {
     installed.checkUpdate(market.pluginMarketData.value)
   }
 
+  const getSourceKey = (sourceUrl: string | null) => sourceUrl ?? '__default__'
+
+  const fetchMarketData = async (force = false) => {
+    const key = getSourceKey(sources.selectedSource.value)
+    if (!force && marketFetchedKey.value === key) return
+
+    try {
+      const data = await commonStore.getPluginCollections(force, sources.selectedSource.value)
+      market.pluginMarketData.value = data
+      marketFetchedKey.value = key
+
+      // Keep installed page update indicators working without doing heavy market indexing.
+      checkUpdate()
+    } catch (err) {
+      toast(tm('messages.getMarketDataFailed') + ' ' + err, 'error')
+    }
+  }
+
+  const processMarketDataIfNeeded = () => {
+    const key = getSourceKey(sources.selectedSource.value)
+    if (marketProcessedKey.value === key) return
+
+    market.trimExtensionName()
+    market.checkAlreadyInstalled()
+    marketProcessedKey.value = key
+  }
+
   const refreshPluginMarket = async () => {
-    await market.refreshPluginMarket()
+    await market.loadPluginMarket(true, true)
+    const key = getSourceKey(sources.selectedSource.value)
+    marketFetchedKey.value = key
+    marketProcessedKey.value = key
     checkUpdate()
   }
 
   const afterInstall = async (result: InstallResult) => {
     await installed.getExtensions()
+    if (marketFetchedKey.value) {
+      market.checkAlreadyInstalled()
+      checkUpdate()
+    }
     viewReadme({ name: result.name, repo: result.repo ?? null })
     await checkAndPromptConflicts()
   }
@@ -91,23 +135,13 @@ export function useExtensionPage() {
     afterInstall
   })
 
-  const loadMarketFirstTime = async () => {
-    try {
-      const data = await commonStore.getPluginCollections(false, sources.selectedSource.value)
-      market.pluginMarketData.value = data
-      setTimeout(() => {
-        market.trimExtensionName()
-        market.checkAlreadyInstalled()
-        checkUpdate()
-      }, 0)
-    } catch (err) {
-      toast(tm('messages.getMarketDataFailed') + ' ' + err, 'error')
-    }
-  }
-
   onMounted(() => {
     void installed.getExtensions()
-    void sources.loadCustomSources()
+
+    void (async () => {
+      await sources.loadCustomSources()
+      await fetchMarketData(false)
+    })()
 
     let urlParams: URLSearchParams
     if (window.location.hash) {
@@ -120,8 +154,15 @@ export function useExtensionPage() {
     if (plugin_name) {
       void installed.openExtensionConfig(plugin_name)
     }
+  })
 
-    void loadMarketFirstTime()
+  watch(activeTab, tab => {
+    if (tab !== 'market') return
+
+    void (async () => {
+      await fetchMarketData(false)
+      processMarketDataIfNeeded()
+    })()
   })
 
   return {
