@@ -22,6 +22,8 @@ export function useExtensionPage() {
 
   const activeTab = ref<ExtensionActiveTab>('installed')
 
+  const marketLoading = ref(false)
+
   const marketFetchedKey = ref<string | null>(null)
   const marketProcessedKey = ref<string | null>(null)
 
@@ -88,6 +90,7 @@ export function useExtensionPage() {
     if (!force && marketFetchedKey.value === key) return
 
     try {
+      marketLoading.value = true
       const data = await commonStore.getPluginCollections(force, sources.selectedSource.value)
       market.pluginMarketData.value = data
       marketFetchedKey.value = key
@@ -96,6 +99,8 @@ export function useExtensionPage() {
       checkUpdate()
     } catch (err) {
       toast(tm('messages.getMarketDataFailed') + ' ' + err, 'error')
+    } finally {
+      marketLoading.value = false
     }
   }
 
@@ -167,6 +172,8 @@ export function useExtensionPage() {
 
   return {
     tm,
+
+    marketLoading,
 
     conflictDialog,
     checkAndPromptConflicts,

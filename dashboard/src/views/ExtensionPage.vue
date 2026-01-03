@@ -53,6 +53,7 @@ const {
   showPluginFullName,
   marketSearch,
   refreshingMarket,
+  marketLoading,
   sortBy,
   sortOrder,
   sortOptions,
@@ -189,6 +190,7 @@ const {
               :sort-order="sortOrder"
               :sort-options="sortOptions"
               :refreshing-market="refreshingMarket"
+              :market-loading="marketLoading"
               :custom-sources="customSources"
               :selected-source="selectedSource"
               :selected-source-obj="selectedSourceObj"

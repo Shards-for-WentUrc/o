@@ -109,7 +109,7 @@
     <div class="d-flex align-center mb-2" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
       <div class="d-flex align-center" style="gap: 6px;">
         <h2>{{ tm('market.allPlugins') }}({{ filteredMarketPlugins.length }})</h2>
-        <v-btn icon variant="text" @click="emit('refresh')" :loading="refreshingMarket">
+        <v-btn icon variant="text" @click="emit('refresh')" :loading="refreshingMarket || marketLoading">
           <v-icon>mdi-refresh</v-icon>
         </v-btn>
       </div>
@@ -161,7 +161,7 @@
     </div>
 
     <v-row style="min-height: 26rem;">
-      <template v-if="refreshingMarket && paginatedPlugins.length === 0">
+      <template v-if="(refreshingMarket || marketLoading) && paginatedPlugins.length === 0">
         <v-col
           v-for="n in 6"
           :key="`skeleton-${n}`"
@@ -302,6 +302,7 @@ const props = defineProps<{
   sortOrder: string
   sortOptions: Array<{ title: string; value: string }>
   refreshingMarket: boolean
+  marketLoading: boolean
   customSources: PluginSource[]
   selectedSource: string | null
   selectedSourceObj: PluginSource | null
