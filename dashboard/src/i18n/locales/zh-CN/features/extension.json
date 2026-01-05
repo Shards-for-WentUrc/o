@@ -111,6 +111,8 @@
       "clear": "清空",
       "installSelected": "安装已选",
       "empty": "购物车为空",
+      "batchProgress": "批量安装（{done}/{total}）",
+      "batchProgressDetail": "批量安装（{done}/{total}）· 成功 {success} · 失败 {failed}",
       "batchInstalling": "批量安装（{count} 个）",
       "batchSuccess": "批量安装完成（成功 {success} / 共 {total}）",
       "batchPartial": "批量安装完成（成功 {success} / 失败 {failed} / 共 {total}）"

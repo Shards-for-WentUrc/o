@@ -173,13 +173,16 @@ export function useExtensionPage() {
     const items = cartItems.value
     if (items.length === 0) return
 
+    const total = items.length
+
     const dangerItems = items.filter(p => Array.isArray(p.tags) && p.tags.includes('danger'))
 
     const run = async () => {
       installed.loading_.value = true
-      setLoading(tm('market.cart.batchInstalling', { count: items.length }))
+      setLoading(tm('market.cart.batchProgressDetail', { done: 0, total, success: 0, failed: 0 }))
 
       let success = 0
+      let done = 0
       const failed: Array<{ name: string; error: string }> = []
 
       try {
@@ -187,6 +190,13 @@ export function useExtensionPage() {
           const url = (plugin?.repo ?? '').trim()
           if (!url) {
             failed.push({ name: plugin?.name ?? 'unknown', error: 'missing repo url' })
+            done++
+            loadingDialog.title = tm('market.cart.batchProgressDetail', {
+              done,
+              total,
+              success,
+              failed: failed.length
+            })
             continue
           }
 
@@ -195,6 +205,14 @@ export function useExtensionPage() {
             success++
           } catch (err) {
             failed.push({ name: plugin?.name ?? url, error: normalizeMessage(err) })
+          } finally {
+            done++
+            loadingDialog.title = tm('market.cart.batchProgressDetail', {
+              done,
+              total,
+              success,
+              failed: failed.length
+            })
           }
         }
 

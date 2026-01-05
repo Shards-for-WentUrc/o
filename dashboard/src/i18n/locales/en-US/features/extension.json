@@ -111,6 +111,8 @@
       "clear": "Clear",
       "installSelected": "Install selected",
       "empty": "Cart is empty",
+      "batchProgress": "Batch installing ({done}/{total})",
+      "batchProgressDetail": "Batch installing ({done}/{total}) · success {success} · failed {failed}",
       "batchInstalling": "Batch installing ({count})",
       "batchSuccess": "Batch install completed (success {success} / total {total})",
       "batchPartial": "Batch install completed (success {success} / failed {failed} / total {total})"
