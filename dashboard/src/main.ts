@@ -14,7 +14,7 @@ import axios from 'axios';
 
 // 初始化新的i18n系统，等待完成后再挂载应用
 setupI18n().then(() => {
-  console.log('🌍 新i18n系统初始化完成');
+  console.log('🌍 i18n系统初始化完成');
   
   const app = createApp(App);
   app.use(router);

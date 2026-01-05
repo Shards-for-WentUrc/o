@@ -302,8 +302,8 @@ const editorOptions: any = {
 
 // --- 预览逻辑 ---
 const previewData = {
-  text: '这是一个示例文本，用于预览模板效果。\n\n这里可以包含多行文本，支持换行和各种格式。',
-  version: 'v4.0.0'
+  text: tm('t2iTemplateEditor.previewText') || '这是一个示例文本，用于预览模板效果。\n\n这里可以包含多行文本，支持换行和各种格式。',
+  version: tm('t2iTemplateEditor.previewVersion', { version: 'v4.0.0' }) || 'v4.0.0'
 }
 const previewContent = computed(() => {
   try {
@@ -313,7 +313,7 @@ const previewContent = computed(() => {
     return injectHljsShim(content)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    return `<div style="color: red; padding: 20px;">模板渲染错误: ${message}</div>`
+    return `<div style="color: red; padding: 20px;">${tm('t2iTemplateEditor.renderError', { message })}</div>`
   }
 })
 
