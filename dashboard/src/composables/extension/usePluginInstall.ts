@@ -8,6 +8,13 @@ export type ToastFn = (message: unknown, color: ToastColor, timeToClose?: number
 export type Tm = (key: string, ...args: any[]) => string
 
 type InstallResult = { name: string; repo?: string | null }
+type AfterInstallOptions = { openReadme?: boolean }
+type InstallFromUrlOptions = {
+  openReadme?: boolean
+  silent?: boolean
+}
+
+type InstallFromUrlResponse = { message: unknown; result: InstallResult }
 
 export function usePluginInstall({
   tm,
@@ -22,7 +29,7 @@ export function usePluginInstall({
   loadingFlag: { value: boolean }
   setLoading: (title: string) => void
   onLoadingResult: (statusCode: number, result: unknown, timeToClose?: number) => void
-  afterInstall: (result: InstallResult) => Promise<void>
+  afterInstall: (result: InstallResult, options?: AfterInstallOptions) => Promise<void>
 }) {
   const fileInput = ref<{ click?: () => void } | null>(null)
 
@@ -33,11 +40,49 @@ export function usePluginInstall({
 
   const dangerConfirmDialog = ref(false)
   const selectedDangerPlugin = ref<PluginMarketItem | null>(null)
+  const pendingDangerAction = ref<(() => void | Promise<void>) | null>(null)
+
+  const openDangerConfirm = (plugin: PluginMarketItem, onConfirm: () => void | Promise<void>) => {
+    selectedDangerPlugin.value = plugin
+    pendingDangerAction.value = onConfirm
+    dangerConfirmDialog.value = true
+  }
+
+  const installFromUrl = async (url: string, options: InstallFromUrlOptions = {}): Promise<InstallFromUrlResponse> => {
+    const { openReadme = true, silent = false } = options
+    const target = (url ?? '').trim()
+    if (!target) {
+      throw new Error(tm('messages.fillUrlOrFile'))
+    }
+
+    if (!silent) {
+      toast(tm('messages.installingFromUrl') + ' ' + target, 'primary')
+    }
+
+    const res = await axios.post<ApiResponse<InstallResult>>('/api/plugin/install', {
+      url: target,
+      proxy: localStorage.getItem('selectedGitHubProxy') || ''
+    })
+
+    if (!silent) {
+      toast(res.data.message, res.data.status === 'ok' ? 'success' : 'error')
+    }
+
+    if (res.data.status === 'error') {
+      throw new Error(typeof res.data.message === 'string' ? res.data.message : String(res.data.message))
+    }
+
+    await afterInstall(res.data.data, { openReadme })
+    return { message: res.data.message, result: res.data.data }
+  }
 
   const handleInstallPlugin = async (plugin: PluginMarketItem) => {
     if (plugin.tags && plugin.tags.includes('danger')) {
-      selectedDangerPlugin.value = plugin
-      dangerConfirmDialog.value = true
+      openDangerConfirm(plugin, () => {
+        extension_url.value = plugin.repo || ''
+        dialog.value = true
+        uploadTab.value = 'url'
+      })
     } else {
       extension_url.value = plugin.repo || ''
       dialog.value = true
@@ -46,18 +91,20 @@ export function usePluginInstall({
   }
 
   const confirmDangerInstall = () => {
-    if (selectedDangerPlugin.value) {
-      extension_url.value = selectedDangerPlugin.value.repo || ''
-      dialog.value = true
-      uploadTab.value = 'url'
-    }
+    const action = pendingDangerAction.value
     dangerConfirmDialog.value = false
     selectedDangerPlugin.value = null
+    pendingDangerAction.value = null
+
+    if (action) {
+      void action()
+    }
   }
 
   const cancelDangerInstall = () => {
     dangerConfirmDialog.value = false
     selectedDangerPlugin.value = null
+    pendingDangerAction.value = null
   }
 
   const newExtension = async () => {
@@ -101,24 +148,11 @@ export function usePluginInstall({
         loadingFlag.value = false
       }
     } else {
-      toast(tm('messages.installingFromUrl') + ' ' + extension_url.value, 'primary')
       try {
-        const res = await axios.post<ApiResponse<InstallResult>>('/api/plugin/install', {
-          url: extension_url.value,
-          proxy: localStorage.getItem('selectedGitHubProxy') || ''
-        })
-
-        toast(res.data.message, res.data.status === 'ok' ? 'success' : 'error')
-        if (res.data.status === 'error') {
-          onLoadingResult(2, res.data.message, -1)
-          return
-        }
-
+        const { message } = await installFromUrl(extension_url.value, { openReadme: true, silent: false })
         extension_url.value = ''
-        onLoadingResult(1, res.data.message)
+        onLoadingResult(1, message)
         dialog.value = false
-
-        await afterInstall(res.data.data)
       } catch (err) {
         toast(tm('messages.installFailed') + ' ' + err, 'error')
         onLoadingResult(2, err, -1)
@@ -138,6 +172,9 @@ export function usePluginInstall({
 
     dangerConfirmDialog,
     selectedDangerPlugin,
+
+    openDangerConfirm,
+    installFromUrl,
 
     handleInstallPlugin,
     confirmDangerInstall,

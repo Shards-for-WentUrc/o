@@ -1,18 +1,43 @@
 <template>
-  <v-tooltip :text="tm('market.installPlugin')" location="left">
-    <template v-slot:activator="{ props }">
-      <v-btn
-        v-bind="props"
-        class="config-floating-btn"
-        variant="flat"
-        icon
-        size="x-large"
-        @click="emit('open-install-dialog')"
-      >
-        <v-icon size="32">mdi-plus</v-icon>
-      </v-btn>
-    </template>
-  </v-tooltip>
+  <div class="market-fab-stack">
+    <v-badge
+      :content="cartCount"
+      :model-value="cartCount > 0"
+      color="primary"
+      location="top end"
+      class="market-fab-badge"
+    >
+      <v-tooltip :text="tm('market.cart.title')" location="left">
+        <template v-slot:activator="{ props }">
+          <v-btn
+            v-bind="props"
+            class="config-floating-btn market-fab-btn"
+            variant="flat"
+            icon
+            size="x-large"
+            @click="cartDialog = true"
+          >
+            <v-icon size="32">mdi-cart</v-icon>
+          </v-btn>
+        </template>
+      </v-tooltip>
+    </v-badge>
+
+    <v-tooltip :text="tm('market.installPlugin')" location="left">
+      <template v-slot:activator="{ props }">
+        <v-btn
+          v-bind="props"
+          class="config-floating-btn market-fab-btn"
+          variant="flat"
+          icon
+          size="x-large"
+          @click="emit('open-install-dialog')"
+        >
+          <v-icon size="32">mdi-plus</v-icon>
+        </v-btn>
+      </template>
+    </v-tooltip>
+  </div>
 
   <v-dialog v-model="sourceDialog" max-width="480">
     <v-card style="height: 520px; display: flex; flex-direction: column;">
@@ -160,6 +185,75 @@
       </div>
     </div>
 
+    <v-dialog v-model="cartDialog" max-width="720">
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon class="mr-2">mdi-cart</v-icon>
+          {{ tm('market.cart.title') }}
+          <v-spacer></v-spacer>
+          <v-chip size="small" color="primary" variant="tonal">{{ cartCount }}</v-chip>
+        </v-card-title>
+
+        <v-divider></v-divider>
+
+        <v-card-text style="max-height: 60vh; overflow-y: auto;">
+          <v-alert v-if="cartItems.length === 0" density="compact" variant="tonal" color="secondary">
+            {{ tm('market.cart.empty') }}
+          </v-alert>
+
+          <v-list v-else density="compact">
+            <v-list-item v-for="plugin in cartItems" :key="getCartKey(plugin)">
+              <v-list-item-title class="text-body-1 font-weight-medium">
+                {{ displayPluginName(plugin) }}
+              </v-list-item-title>
+              <v-list-item-subtitle class="text-caption">
+                {{ plugin.author }} · {{ plugin.version }}
+              </v-list-item-subtitle>
+
+              <template #append>
+                <v-btn
+                  icon
+                  variant="text"
+                  :disabled="!plugin?.repo"
+                  @click="emit('view-readme', plugin)"
+                >
+                  <v-icon>mdi-book-open-variant</v-icon>
+                  <v-tooltip activator="parent" location="top">{{ tm('market.cart.viewReadme') }}</v-tooltip>
+                </v-btn>
+
+                <v-btn icon variant="text" @click="emit('toggle-cart', plugin)">
+                  <v-icon>mdi-delete-outline</v-icon>
+                  <v-tooltip activator="parent" location="top">{{ tm('market.cart.remove') }}</v-tooltip>
+                </v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+
+        <v-divider></v-divider>
+
+        <v-card-actions>
+          <v-btn
+            color="error"
+            variant="text"
+            :disabled="cartItems.length === 0"
+            @click="emit('clear-cart')"
+          >
+            {{ tm('market.cart.clear') }}
+          </v-btn>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            variant="flat"
+            :disabled="cartItems.length === 0"
+            @click="emit('install-cart')"
+          >
+            {{ tm('market.cart.installSelected') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-row style="min-height: 26rem;">
       <template v-if="(refreshingMarket || marketLoading) && paginatedPlugins.length === 0">
         <v-col
@@ -258,10 +352,28 @@
               </v-list>
             </v-menu>
             <v-spacer></v-spacer>
+            <v-tooltip :text="isInCart(plugin) ? tm('market.cart.remove') : tm('market.cart.add')" location="top">
+              <template #activator="{ props: tipProps }">
+                <v-btn
+                  v-bind="tipProps"
+                  icon
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  style="height: 32px; width: 32px;"
+                  :disabled="!!plugin?.installed"
+                  @click="emit('toggle-cart', plugin)"
+                >
+                  <v-icon size="small">{{ isInCart(plugin) ? 'mdi-cart-remove' : 'mdi-cart-plus' }}</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+
             <v-btn v-if="plugin?.repo" color="secondary" size="small" variant="tonal" :href="plugin.repo" target="_blank" style="height: 32px;">
               <v-icon icon="mdi-github" start size="small"></v-icon>
               {{ tm('market.repo') }}
             </v-btn>
+
             <v-btn
               v-if="!plugin?.installed"
               color="primary"
@@ -272,9 +384,9 @@
             >
               {{ tm('buttons.install') }}
             </v-btn>
-            <v-chip v-else color="success" size="x-small" label style="height: 20px;">
+            <v-btn v-else color="success" size="small" variant="tonal" disabled style="height: 32px;">
               ✓ {{ tm('status.installed') }}
-            </v-chip>
+            </v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -307,6 +419,8 @@ const props = defineProps<{
   selectedSource: string | null
   selectedSourceObj: PluginSource | null
   showPluginFullName: boolean
+  cartItems: PluginMarketItem[]
+  cartCount: number
 }>()
 
 const emit = defineEmits<{
@@ -320,11 +434,16 @@ const emit = defineEmits<{
   (e: 'add-custom-source'): void
   (e: 'edit-custom-source', source: PluginSource): void
   (e: 'remove-custom-source', source: PluginSource): void
+  (e: 'toggle-cart', plugin: PluginMarketItem): void
+  (e: 'clear-cart'): void
+  (e: 'install-cart'): void
+  (e: 'view-readme', plugin: PluginMarketItem): void
 }>()
 
 const { tm } = useModuleI18n('features/extension')
 const MAX_DESCRIPTION_LENGTH = 50
 const sourceDialog = ref(false)
+const cartDialog = ref(false)
 
 const currentPageModel = computed({
   get: () => props.currentPage,
@@ -357,6 +476,16 @@ const displayPluginName = (plugin: PluginMarketItem) => {
   return props.showPluginFullName ? plugin.name : plugin.trimmedName
 }
 
+const getCartKey = (plugin: PluginMarketItem) => {
+  const repo = (plugin.repo ?? '').trim()
+  return repo || plugin.name
+}
+
+const isInCart = (plugin: PluginMarketItem) => {
+  const key = getCartKey(plugin)
+  return props.cartItems.some(p => getCartKey(p) === key)
+}
+
 const formatUpdatedAt = (value: string) => {
   return new Date(value).toLocaleString()
 }
@@ -371,3 +500,38 @@ const formatDescription = (value?: string) => {
     : text
 }
 </script>
+
+<style scoped>
+.market-fab-stack {
+  position: fixed;
+  right: 52px;
+  bottom: 52px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+@media (max-width: 600px) {
+  .market-fab-stack {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+.market-fab-btn {
+  position: static !important;
+  right: auto !important;
+  bottom: auto !important;
+  pointer-events: auto;
+}
+
+.market-fab-badge {
+  pointer-events: auto;
+}
+
+.market-fab-badge :deep(.v-badge__badge) {
+  color: #fff !important;
+}
+</style>

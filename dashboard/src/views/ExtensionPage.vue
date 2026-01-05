@@ -90,7 +90,12 @@ const {
   confirmRemoveSource,
   cancelDangerInstall,
   confirmDangerInstall,
-  newExtension
+  newExtension,
+  cartItems,
+  cartCount,
+  toggleCart,
+  clearCart,
+  installCart
 } = useExtensionPage();
 </script>
 
@@ -195,6 +200,8 @@ const {
               :selected-source="selectedSource"
               :selected-source-obj="selectedSourceObj"
               :show-plugin-full-name="showPluginFullName"
+              :cart-items="cartItems"
+              :cart-count="cartCount"
               @update:currentPage="currentPage = $event"
               @update:sortBy="sortBy = $event"
               @update:sortOrder="sortOrder = $event"
@@ -205,6 +212,10 @@ const {
               @add-custom-source="addCustomSource"
               @edit-custom-source="editCustomSource"
               @remove-custom-source="removeCustomSource"
+              @toggle-cart="toggleCart"
+              @clear-cart="clearCart"
+              @install-cart="installCart"
+              @view-readme="viewReadme"
             />
           </div>
 

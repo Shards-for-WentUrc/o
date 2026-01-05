@@ -1,4 +1,4 @@
-﻿import { onMounted, ref, watch } from 'vue'
+﻿import { computed, onMounted, ref, watch } from 'vue'
 
 import { useModuleI18n } from '@/i18n/composables'
 import { useCommonStore } from '@/stores/common'
@@ -15,6 +15,7 @@ import { useSnackToast } from './useSnackToast'
 import { normalizeMessage, toReadmeUrl } from './utils'
 
 type InstallResult = { name: string; repo?: string | null }
+type AfterInstallOptions = { openReadme?: boolean }
 
 export function useExtensionPage() {
   const commonStore = useCommonStore()
@@ -121,13 +122,15 @@ export function useExtensionPage() {
     checkUpdate()
   }
 
-  const afterInstall = async (result: InstallResult) => {
+  const afterInstall = async (result: InstallResult, options: AfterInstallOptions = {}) => {
     await installed.getExtensions()
     if (marketFetchedKey.value) {
       market.checkAlreadyInstalled()
       checkUpdate()
     }
-    viewReadme({ name: result.name, repo: result.repo ?? null })
+    if (options.openReadme ?? true) {
+      viewReadme({ name: result.name, repo: result.repo ?? null })
+    }
     await checkAndPromptConflicts()
   }
 
@@ -139,6 +142,92 @@ export function useExtensionPage() {
     onLoadingResult: onLoadingDialogResult,
     afterInstall
   })
+
+  const getCartKey = (plugin: { name: string; repo?: string | null }) => {
+    const repo = (plugin.repo ?? '').trim()
+    return repo || plugin.name
+  }
+
+  const cart = ref(new Map<string, any>())
+
+  const cartItems = computed(() => Array.from(cart.value.values()))
+  const cartCount = computed(() => cart.value.size)
+
+  const toggleCart = (plugin: any) => {
+    if (!plugin) return
+    if (plugin.installed) return
+
+    const key = getCartKey(plugin)
+    if (cart.value.has(key)) {
+      cart.value.delete(key)
+    } else {
+      cart.value.set(key, plugin)
+    }
+  }
+
+  const clearCart = () => {
+    cart.value.clear()
+  }
+
+  const installCart = async () => {
+    const items = cartItems.value
+    if (items.length === 0) return
+
+    const dangerItems = items.filter(p => Array.isArray(p.tags) && p.tags.includes('danger'))
+
+    const run = async () => {
+      installed.loading_.value = true
+      setLoading(tm('market.cart.batchInstalling', { count: items.length }))
+
+      let success = 0
+      const failed: Array<{ name: string; error: string }> = []
+
+      try {
+        for (const plugin of items) {
+          const url = (plugin?.repo ?? '').trim()
+          if (!url) {
+            failed.push({ name: plugin?.name ?? 'unknown', error: 'missing repo url' })
+            continue
+          }
+
+          try {
+            await install.installFromUrl(url, { openReadme: false, silent: true })
+            success++
+          } catch (err) {
+            failed.push({ name: plugin?.name ?? url, error: normalizeMessage(err) })
+          }
+        }
+
+        await installed.getExtensions()
+        if (marketFetchedKey.value) {
+          market.checkAlreadyInstalled()
+          checkUpdate()
+        }
+
+        if (failed.length === 0) {
+          onLoadingDialogResult(1, tm('market.cart.batchSuccess', { success, total: items.length }))
+        } else {
+          onLoadingDialogResult(
+            2,
+            tm('market.cart.batchPartial', { success, failed: failed.length, total: items.length }),
+            -1
+          )
+        }
+
+        clearCart()
+        await checkAndPromptConflicts()
+      } finally {
+        installed.loading_.value = false
+      }
+    }
+
+    if (dangerItems.length > 0) {
+      install.openDangerConfirm(dangerItems[0], run)
+      return
+    }
+
+    await run()
+  }
 
   onMounted(() => {
     void installed.getExtensions()
@@ -281,6 +370,12 @@ export function useExtensionPage() {
     handleInstallPlugin: install.handleInstallPlugin,
     confirmDangerInstall: install.confirmDangerInstall,
     cancelDangerInstall: install.cancelDangerInstall,
+
+    cartItems,
+    cartCount,
+    toggleCart,
+    clearCart,
+    installCart,
 
     loadCustomSources: sources.loadCustomSources,
     saveCustomSources: sources.saveCustomSources,

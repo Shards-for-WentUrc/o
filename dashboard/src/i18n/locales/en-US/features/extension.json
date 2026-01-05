@@ -102,7 +102,19 @@
     "sourceUpdated": "Source updated successfully",
     "defaultOfficialSource": "Default Official Source",
     "sourceExists": "This source already exists",
-    "installPlugin": "Install Plugin"
+    "installPlugin": "Install Plugin",
+    "cart": {
+      "title": "Cart",
+      "add": "Add to cart",
+      "remove": "Remove from cart",
+      "viewReadme": "Open README",
+      "clear": "Clear",
+      "installSelected": "Install selected",
+      "empty": "Cart is empty",
+      "batchInstalling": "Batch installing ({count})",
+      "batchSuccess": "Batch install completed (success {success} / total {total})",
+      "batchPartial": "Batch install completed (success {success} / failed {failed} / total {total})"
+    }
   },
   "sort": {
     "default": "Default",

@@ -102,7 +102,19 @@
     "sourceUpdated": "插件源更新成功",
     "defaultOfficialSource": "默认官方源",
     "sourceExists": "该插件源已存在",
-    "installPlugin": "安装插件"
+    "installPlugin": "安装插件",
+    "cart": {
+      "title": "购物车",
+      "add": "加入购物车",
+      "remove": "移出购物车",
+      "viewReadme": "阅读 README",
+      "clear": "清空",
+      "installSelected": "安装已选",
+      "empty": "购物车为空",
+      "batchInstalling": "批量安装（{count} 个）",
+      "batchSuccess": "批量安装完成（成功 {success} / 共 {total}）",
+      "batchPartial": "批量安装完成（成功 {success} / 失败 {failed} / 共 {total}）"
+    }
   },
   "sort": {
     "default": "默认排序",
