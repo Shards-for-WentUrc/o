@@ -361,6 +361,14 @@ class InternalAgentSubStage(Stage):
             if (enable_streaming := event.get_extra("enable_streaming")) is not None:
                 streaming_response = bool(enable_streaming)
 
+            # 检查消息内容是否有效，避免空消息触发钩子
+            has_provider_request = event.get_extra("provider_request") is not None
+            has_valid_message = bool(event.message_str and event.message_str.strip())
+
+            if not has_provider_request and not has_valid_message:
+                logger.debug("skip llm request: empty message and no provider_request")
+                return
+
             logger.debug("ready to request llm provider")
 
             # 通知等待调用 LLM（在获取锁之前）
@@ -522,13 +530,15 @@ class InternalAgentSubStage(Stage):
                     ):
                         yield
 
-                await self._save_to_history(
-                    event,
-                    req,
-                    agent_runner.get_final_llm_resp(),
-                    agent_runner.run_context.messages,
-                    agent_runner.stats,
-                )
+                # 检查事件是否被停止，如果被停止则不保存历史记录
+                if not event.is_stopped():
+                    await self._save_to_history(
+                        event,
+                        req,
+                        agent_runner.get_final_llm_resp(),
+                        agent_runner.run_context.messages,
+                        agent_runner.stats,
+                    )
 
             # 异步处理 WebChat 特殊情况
             if event.get_platform_name() == "webchat":
