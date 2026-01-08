@@ -15,13 +15,13 @@ from astrbot.core.utils.io import download_dashboard, get_dashboard_version
 sys.path.append(Path(__file__).parent.as_posix())
 
 logo_tmpl = r"""
-     ___           _______.___________..______      .______     ______   .___________.
-    /   \         /       |           ||   _  \     |   _  \   /  __  \  |           |
-   /  ^  \       |   (----`---|  |----`|  |_)  |    |  |_)  | |  |  |  | `---|  |----`
-  /  /_\  \       \   \       |  |     |      /     |   _  <  |  |  |  |     |  |
- /  _____  \  .----)   |      |  |     |  |\  \----.|  |_)  | |  `--'  |     |  |
-/__/     \__\ |_______/       |__|     | _| `._____||______/   \______/      |__|
-
+    ___       ___       ___       ___       ___       ___       ___
+   /\  \     /\  \     /\  \     /\  \     /\  \     /\  \     /\  \
+  /::\  \   /::\  \    \:\  \   /::\  \   /::\  \   /::\  \    \:\  \
+ /::\:\__\ /\:\:\__\   /::\__\ /::\:\__\ /::\:\__\ /:/\:\__\   /::\__\
+ \/\::/  / \:\:\/__/  /:/\/__/ \;:::/  / \:\::/  / \:\/:/  /  /:/\/__/
+   /:/  /   \::/  /   \/__/     |:\/__/   \::/  /   \::/  /   \/__/
+   \/__/     \/__/               \|__|     \/__/     \/__/
 """
 
 
@@ -76,6 +76,30 @@ async def check_dashboard_files(webui_dir: str | None = None):
     return data_dist_path
 
 
+async def run_astrbot(webui_dir: str | None = None):
+    # 检查仪表板文件
+    resolved_webui_dir = await check_dashboard_files(webui_dir)
+
+    db = db_helper
+
+    # 打印 logo
+    logger.info(logo_tmpl)
+
+    core_lifecycle = InitialLoader(db, log_broker)
+    core_lifecycle.webui_dir = resolved_webui_dir
+
+    try:
+        await core_lifecycle.start()
+    except asyncio.CancelledError:
+        # asyncio.run 在 Ctrl+C 时会取消主协程；这里做优雅清理。
+        logger.info("收到退出信号，正在优雅关闭...")
+        try:
+            await core_lifecycle.stop()
+        except Exception as e:
+            logger.error(f"优雅关闭失败: {e}")
+        raise
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AstrBot")
     parser.add_argument(
@@ -92,14 +116,8 @@ if __name__ == "__main__":
     log_broker = LogBroker()
     LogManager.set_queue_handler(logger, log_broker)
 
-    # 检查仪表板文件
-    webui_dir = asyncio.run(check_dashboard_files(args.webui_dir))
-
-    db = db_helper
-
-    # 打印 logo
-    logger.info(logo_tmpl)
-
-    core_lifecycle = InitialLoader(db, log_broker)
-    core_lifecycle.webui_dir = webui_dir
-    asyncio.run(core_lifecycle.start())
+    try:
+        asyncio.run(run_astrbot(args.webui_dir))
+    except KeyboardInterrupt:
+        # 避免打印 traceback；退出码保持为 0
+        logger.info("已退出。")

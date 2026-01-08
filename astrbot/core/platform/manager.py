@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import traceback
 from asyncio import Queue
 
@@ -19,6 +20,9 @@ class PlatformManager:
 
         self._inst_map: dict[str, dict] = {}
         self._platform_op_locks: dict[str, asyncio.Lock] = {}
+
+        self._reload_debounce_tasks: dict[str, asyncio.Task] = {}
+        self._reload_debounce_state: dict[str, dict] = {}
 
         self.astrbot_config = config
         self.platforms_config = config["platform"]
@@ -214,6 +218,52 @@ class PlatformManager:
         for key in list(self._inst_map.keys()):
             if key not in config_ids:
                 await self.terminate_platform(key)
+
+    async def reload_debounced(self, platform_config: dict, debounce_sec: float = 0.35):
+        """对平台重载做去抖：同一 platform_id 在 debounce 窗口内只执行一次实际 reload。
+
+        语义：
+        - 多次调用会合并，最终仅使用最后一次传入的配置。
+        - 同一平台的并发调用会等待同一个结果。
+        """
+
+        platform_id = platform_config.get("id")
+        if not platform_id:
+            # 没有 id 时无法合并，保持原有行为
+            await self.reload(platform_config)
+            return
+
+        state = self._reload_debounce_state.get(platform_id)
+        if state is None or state.get("future") is None or state["future"].done():
+            loop = asyncio.get_running_loop()
+            future: asyncio.Future = loop.create_future()
+            state = {"future": future, "latest_config": copy.deepcopy(platform_config)}
+            self._reload_debounce_state[platform_id] = state
+        else:
+            # 复用同一个 future，让所有请求等待同一个最终重载
+            state["latest_config"] = copy.deepcopy(platform_config)
+
+        # 取消旧的计时任务（仅取消计时，不取消 future）
+        old_task = self._reload_debounce_tasks.get(platform_id)
+        if old_task and not old_task.done():
+            old_task.cancel()
+
+        async def _runner():
+            try:
+                await asyncio.sleep(debounce_sec)
+                latest_config = state["latest_config"]
+                await self.reload(latest_config)
+                if not state["future"].done():
+                    state["future"].set_result(None)
+            except asyncio.CancelledError:
+                # 被新的更新覆盖，正常退出
+                return
+            except Exception as exc:
+                if not state["future"].done():
+                    state["future"].set_exception(exc)
+
+        self._reload_debounce_tasks[platform_id] = asyncio.create_task(_runner())
+        await state["future"]
 
     async def _terminate_platform_unlocked(self, platform_id: str):
         """终止一个平台（调用方需确保已获取平台锁）"""

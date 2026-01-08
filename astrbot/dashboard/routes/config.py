@@ -925,7 +925,7 @@ class ConfigRoute(Route):
 
         try:
             save_config(self.config, self.config, is_core=True)
-            await self.core_lifecycle.platform_manager.reload(new_config)
+            await self.core_lifecycle.platform_manager.reload_debounced(new_config)
         except Exception as e:
             return Response().error(str(e)).__dict__
         return Response().ok(None, "更新平台配置成功~").__dict__
