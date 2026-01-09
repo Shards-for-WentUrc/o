@@ -1,11 +1,11 @@
 <template>
-    <div class="messages-container" ref="messageContainer">
+    <div class="messages-container" ref="messageContainer" :class="{ 'is-dark': isDark }">
         <!-- 加载指示器 -->
         <div v-if="isLoadingMessages" class="loading-overlay" :class="{ 'is-dark': isDark }">
             <v-progress-circular indeterminate size="48" width="4" color="primary"></v-progress-circular>
         </div>
         <!-- 聊天消息列表 -->
-        <div class="message-list" :class="{ 'loading-blur': isLoadingMessages }">
+        <div class="message-list" :class="{ 'loading-blur': isLoadingMessages }" @mouseup="handleTextSelection">
             <div class="message-item fade-in" v-for="(msg, index) in messages" :key="index">
                 <!-- 用户消息 -->
                 <div v-if="msg.content.type == 'user'" class="user-message">
@@ -112,8 +112,9 @@
                                     <!-- Tool Calls Block -->
                                     <div v-if="part.type === 'tool_call' && part.tool_calls && part.tool_calls.length > 0"
                                         class="tool-calls-container">
+                                        <div class="tool-calls-label">{{ tm('actions.toolsUsed') }}</div>
                                         <div v-for="(toolCall, tcIndex) in part.tool_calls" :key="toolCall.id"
-                                            class="tool-call-card" :class="{ 'is-dark': isDark }" :style="isDark ? {
+                                            class="tool-call-card" :class="{ 'is-dark': isDark, 'expanded': isToolCallExpanded(index, partIndex, tcIndex) }" :style="isDark ? {
                                                 backgroundColor: 'rgba(40, 60, 100, 0.4)',
                                                 borderColor: 'rgba(100, 140, 200, 0.4)'
                                             } : {}">
@@ -150,7 +151,7 @@
                                                     <span class="detail-label">ID:</span>
                                                     <code class="detail-value"
                                                         :style="isDark ? { backgroundColor: 'transparent' } : {}">{{ toolCall.id
-                    }}</code>
+                                                        }}</code>
                                                 </div>
                                                 <div class="tool-call-detail-row">
                                                     <span class="detail-label">Args:</span>
@@ -227,7 +228,7 @@
                         </div>
                         <div class="message-actions" v-if="!msg.content.isLoading || index === messages.length - 1">
                             <span class="message-time" v-if="msg.created_at">{{ formatMessageTime(msg.created_at)
-                            }}</span>
+                                }}</span>
                             <!-- Agent Stats Menu -->
                             <v-menu v-if="msg.content.agentStats" location="bottom" open-on-hover
                                 :close-on-content-click="false">
@@ -277,6 +278,19 @@
                 </div>
             </div>
         </div>
+
+        <!-- 浮动引用按钮 -->
+        <div v-if="selectedText.content && selectedText.messageIndex !== null" class="selection-quote-button" :style="{
+            top: selectedText.position.top + 'px',
+            left: selectedText.position.left + 'px',
+            position: 'fixed'
+        }">
+            <v-btn size="large" rounded="xl" @click="handleQuoteSelected" class="quote-btn"
+                :class="{ 'dark-mode': isDark }">
+                <v-icon left small>mdi-reply</v-icon>
+                引用
+            </v-btn>
+        </div>
     </div>
 </template>
 
@@ -309,7 +323,7 @@ export default {
             default: false
         }
     },
-    emits: ['openImagePreview', 'replyMessage'],
+    emits: ['openImagePreview', 'replyMessage', 'replyWithText'],
     setup() {
         const { t } = useI18n();
         const { tm } = useModuleI18n('features/chat');
@@ -330,6 +344,12 @@ export default {
             expandedToolCalls: new Set(), // Track which tool call cards are expanded
             elapsedTimeTimer: null as any, // Timer for updating elapsed time
             currentTime: Date.now() / 1000, // Current time for elapsed time calculation
+            // 选中文本相关状态
+            selectedText: {
+                content: '',
+                messageIndex: null,
+                position: { top: 0, left: 0 }
+            }
         };
     },
     mounted() {
@@ -347,6 +367,85 @@ export default {
         }
     },
     methods: {
+        // 处理文本选择
+        handleTextSelection() {
+            const selection = window.getSelection();
+            const selectedText = selection?.toString() ?? '';
+
+            if (!selectedText.trim()) {
+                this.selectedText.content = '';
+                this.selectedText.messageIndex = null;
+                return;
+            }
+
+            if (!selection || selection.rangeCount === 0) {
+                this.selectedText.content = '';
+                this.selectedText.messageIndex = null;
+                return;
+            }
+
+            const range = selection.getRangeAt(0);
+            const startContainer = range.startContainer;
+            let node = (startContainer as any)?.parentElement as HTMLElement | null;
+
+            while (node && !node.classList.contains('message-item')) {
+                node = node.parentElement;
+            }
+
+            const messageItem = node;
+            if (!messageItem) {
+                this.selectedText.content = '';
+                this.selectedText.messageIndex = null;
+                return;
+            }
+
+            const container = this.getMessageContainerEl();
+            const messageItems = container?.querySelectorAll<HTMLElement>('.message-item');
+
+            let messageIndex = -1;
+            if (messageItems) {
+                for (let i = 0; i < messageItems.length; i++) {
+                    if (messageItems[i] === messageItem) {
+                        messageIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (messageIndex === -1) {
+                this.selectedText.content = '';
+                this.selectedText.messageIndex = null;
+                return;
+            }
+
+            const rect = range.getBoundingClientRect();
+
+            this.selectedText.content = selectedText;
+            this.selectedText.messageIndex = messageIndex;
+            this.selectedText.position = {
+                top: Math.max(0, rect.bottom + 5),
+                left: Math.max(0, (rect.left + rect.right) / 2)
+            };
+        },
+
+        // 处理引用选中的文本
+        handleQuoteSelected() {
+            if (this.selectedText.messageIndex === null) return;
+
+            const msg = this.messages[this.selectedText.messageIndex];
+            if (!msg || !msg.id) return;
+
+            this.$emit('replyWithText', {
+                messageId: msg.id,
+                selectedText: this.selectedText.content,
+                messageIndex: this.selectedText.messageIndex
+            });
+
+            this.selectedText.content = '';
+            this.selectedText.messageIndex = null;
+            window.getSelection()?.removeAllRanges();
+        },
+
         formatPlainPreText(text: string): string {
             const raw = (text ?? '').toString();
             if (!raw) return raw;
@@ -866,6 +965,23 @@ export default {
     gap: 8px;
 }
 
+:deep(code.bg-secondary) {
+    background-color: #ececec !important;
+    color: #0d0d0d !important;
+}
+
+:deep(code.rounded) {
+    border-radius: 6px !important;
+}
+
+.messages-container.is-dark :deep(code.bg-secondary) {
+    background-color: #424242 !important;
+    color: #ffffff !important;
+}
+
+.messages-container.is-dark :deep(.code-block-container) {
+    background-color: #1f1f1f !important;
+}
 
 /* 基础动画 */
 @keyframes fadeIn {
@@ -1354,11 +1470,25 @@ export default {
     margin-top: 6px;
 }
 
+.tool-calls-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--v-theme-secondaryText);
+    opacity: 0.7;
+    margin-bottom: 4px;
+}
+
 .tool-call-card {
     border-radius: 8px;
     overflow: hidden;
     background-color: #eff3f6;
     margin: 8px 0px;
+    max-width: 300px;
+    transition: max-width 0.1s ease;
+}
+
+.tool-call-card.expanded {
+    max-width: 100%;
 }
 
 .tool-call-header {
@@ -1433,6 +1563,36 @@ export default {
 
 .tool-call-status .status-icon {
     font-size: 14px;
+}
+
+/* 浮动引用按钮样式 */
+.selection-quote-button {
+    position: fixed;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: all;
+}
+
+
+.quote-btn {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    padding: 4px 24px;
+    background-color: #f6f4fa !important;
+    color: #333333 !important;
+}
+
+.quote-btn:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background-color: #f6f4fa !important;
+}
+
+/* 深色主题 */
+.quote-btn.dark-mode {
+    background-color: #2d2d2d !important;
+    color: #ffffff !important;
 }
 
 .tool-call-status .status-icon.spinning {
