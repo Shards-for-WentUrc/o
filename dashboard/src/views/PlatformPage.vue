@@ -512,6 +512,15 @@ export default {
   flex: 1;
 }
 
+/* 仅在平台页面：将卡片底部按钮放到左侧 */
+.platform-card-item :deep(.v-card-actions) {
+  justify-content: flex-start;
+}
+
+.platform-card-item :deep(.v-card-actions .v-spacer) {
+  display: none;
+}
+
 .platform-card-item :deep(.v-switch) {
   flex-shrink: 0;
   margin-left: 8px;

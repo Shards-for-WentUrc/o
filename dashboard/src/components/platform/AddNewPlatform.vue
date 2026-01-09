@@ -1,9 +1,10 @@
 <template>
   <v-dialog v-model="showDialog" max-width="800px" height="90%" @after-enter="prepareData">
     <v-card
+      class="add-platform-card"
       :title="updatingMode ? `${tm('dialog.edit')} ${updatingPlatformConfig.id} ${tm('dialog.adapter')}` : tm('dialog.addPlatform')">
-  <v-card-text ref="dialogScrollContainer" class="pa-4 ml-2" style="overflow-y: auto;">
-        <div class="d-flex align-start" style="width: 100%;">
+  <v-card-text ref="dialogScrollContainer" class="pa-4 ml-2 add-platform-body" style="overflow-y: auto;">
+        <div class="d-flex align-start flex-wrap" style="width: 100%;">
           <div>
             <v-icon icon="mdi-numeric-1-circle" class="mr-3"></v-icon>
           </div>
@@ -16,8 +17,7 @@
 
               <div v-if="!updatingMode">
                 <v-select v-model="selectedPlatformType" :items="Object.keys(platformTemplates)" item-title="name"
-                  item-value="name" label="消息平台类别" variant="outlined" rounded="md" dense hide-details class="mt-6"
-                  style="max-width: 30%; min-width: 300px;">
+                  item-value="name" label="消息平台类别" variant="outlined" rounded="md" dense hide-details class="mt-6 platform-type-field">
 
                   <template v-slot:item="{ props: itemProps, item }">
                     <v-list-item v-bind="itemProps">
@@ -42,7 +42,7 @@
               </div>
               <div v-else>
                 <v-text-field label="消息平台类别" variant="outlined" rounded="md" dense hide-details class="mt-6"
-                  style="max-width: 30%; min-width: 300px;" v-model="updatingPlatformConfig.type"
+                  v-model="updatingPlatformConfig.type"
                   disabled></v-text-field>
                 <div class="mt-3">
                   <div class="mt-2">
@@ -56,7 +56,7 @@
           </div>
         </div>
 
-        <div class="d-flex align-start mt-6">
+        <div class="d-flex align-start mt-6 flex-wrap">
           <div>
             <v-icon icon="mdi-numeric-2-circle" class="mr-3"></v-icon>
           </div>
@@ -92,7 +92,7 @@
                   <div class="d-flex align-center ml-10 my-2" v-if="aBConfigRadioVal === '0'">
                     <v-select v-model="selectedAbConfId" :items="configInfoList" item-title="name"
                       item-value="id" label="选择配置文件" variant="outlined" rounded="md" dense hide-details
-                      style="max-width: 30%; min-width: 200px;">
+                      class="abconf-select-field">
                     </v-select>
                     <v-btn icon variant="text" density="comfortable" class="ml-2"
                       :disabled="!selectedAbConfId" @click="openConfigDrawer(selectedAbConfId)">
@@ -103,7 +103,7 @@
                   </v-radio>
                   <div class="d-flex align-center" v-if="aBConfigRadioVal === '1'">
                     <v-text-field v-model="selectedAbConfId" label="新配置文件名称" variant="outlined" rounded="md" dense
-                      hide-details style="max-width: 30%; min-width: 200px;" class="ml-10 my-2">
+                      hide-details class="ml-10 my-2 abconf-select-field">
                     </v-text-field>
                   </div>
 
@@ -162,10 +162,10 @@
                   variant="outlined">
 
                   <template v-slot:item.source="{ item }">
-                    <div class="d-flex align-center" style="min-width: 250px;">
+                    <div class="d-flex align-center flex-wrap route-source-cell">
                       <v-select v-if="isEditingRoutes" v-model="item.messageType" :items="messageTypeOptions"
                         item-title="label" item-value="value" variant="outlined" density="compact" hide-details
-                        style="max-width: 140px;">
+                        class="route-message-type-field">
                       </v-select>
                       <small v-else>{{ getMessageTypeLabel(item.messageType) }}</small>
                       <small class="mx-1">:</small>
@@ -180,7 +180,7 @@
                     <div class="d-flex align-center">
                       <v-select v-if="isEditingRoutes" v-model="item.configId" :items="configInfoList"
                         item-title="name" item-value="id" variant="outlined" density="compact"
-                        style="min-width: 200px;" hide-details>
+                        class="route-config-field" hide-details>
                       </v-select>
                       <div v-else>
                         <small>{{ getConfigName(item.configId) }}</small>
@@ -1005,6 +1005,63 @@ export default {
 <style>
 .v-select__selection-text {
   font-size: 12px;
+}
+
+.add-platform-body {
+  overflow-x: hidden;
+}
+
+.add-platform-card :deep(.v-table__wrapper) {
+  overflow-x: hidden;
+}
+
+.add-platform-card :deep(table) {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.add-platform-card :deep(th),
+.add-platform-card :deep(td) {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.platform-type-field,
+.abconf-select-field {
+  width: 100%;
+  max-width: 30%;
+  min-width: 300px;
+}
+
+.route-source-cell {
+  min-width: 0;
+  gap: 8px;
+}
+
+.route-message-type-field {
+  width: 100%;
+  max-width: 140px;
+}
+
+.route-config-field {
+  width: 100%;
+  min-width: 200px;
+}
+
+@media (max-width: 600px) {
+  .platform-type-field,
+  .abconf-select-field {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .route-message-type-field {
+    max-width: 100%;
+  }
+
+  .route-config-field {
+    min-width: 0;
+  }
 }
 
 .config-drawer-overlay {
