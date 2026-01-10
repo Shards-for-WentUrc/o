@@ -489,9 +489,10 @@ class ChatRoute(Route):
                 stream(),
                 {
                     "Content-Type": "text/event-stream",
-                    "Cache-Control": "no-cache",
-                    "Transfer-Encoding": "chunked",
-                    "Connection": "keep-alive",
+                    # Avoid hop-by-hop headers that break under HTTP/2.
+                    "Cache-Control": "no-cache, no-transform",
+                    # Disable proxy buffering (nginx etc.) for SSE.
+                    "X-Accel-Buffering": "no",
                 },
             ),
         )
