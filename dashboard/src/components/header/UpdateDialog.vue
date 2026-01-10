@@ -48,7 +48,8 @@ const updateChannelOptions = computed(() => [
   { title: t('core.header.updateDialog.channel.landfill'), value: 'landfill' as const }
 ])
 
-const updateStatus = ref<string>('')
+const updateStatusKey = ref<string | null>(null)
+const updateStatusText = ref('')
 const lastCheckedAt = ref<Date | null>(null)
 
 const hasNewVersion = ref(false)
@@ -69,8 +70,17 @@ const releasesHeader = computed(() => [
 ])
 
 const activeHasNewVersion = computed(() => (updateTab.value === 'dashboard' ? dashboardHasNewVersion.value : hasNewVersion.value))
-const activeVersionText = computed(() => (updateTab.value === 'dashboard' ? props.dashboardCurrentVersion : props.botCurrVersion))
-const displayUpdateStatus = computed(() => updateStatus.value)
+const displayUpdateStatus = computed(() => (updateStatusKey.value ? t(updateStatusKey.value) : updateStatusText.value))
+
+function setUpdateStatusKey(key: string) {
+  updateStatusKey.value = key
+  updateStatusText.value = ''
+}
+
+function setUpdateStatusText(text: unknown) {
+  updateStatusKey.value = null
+  updateStatusText.value = typeof text === 'string' ? text : String(text)
+}
 
 const releaseNotesDialog = ref(false)
 const releaseNotesTitle = ref('')
@@ -93,7 +103,7 @@ function onSourceChannelChanged() {
 }
 
 async function checkUpdate() {
-  updateStatus.value = t('core.header.updateDialog.status.checking')
+  setUpdateStatusKey('core.header.updateDialog.status.checking')
   try {
     const res = await axios.get('/api/update/check', {
       params: { channel: sourceUpdateChannel.value }
@@ -109,9 +119,10 @@ async function checkUpdate() {
 
     if (hasNewVersion.value) {
       releaseMessage.value = res.data.message
-      updateStatus.value = t('core.header.version.hasNewVersion')
+      setUpdateStatusKey('core.header.version.hasNewVersion')
     } else {
-      updateStatus.value = res.data.message
+      // 后端 message 可能是固定中文句子；这里用 i18n key，保证切换语言时能立即更新
+      setUpdateStatusKey('core.header.updateDialog.dashboardUpdate.isLatest')
     }
   } catch (err: any) {
     if (err?.response && err.response.status == 401) {
@@ -119,7 +130,7 @@ async function checkUpdate() {
       authStore.logout()
       return
     }
-    updateStatus.value = err
+    setUpdateStatusText(err)
   } finally {
     lastCheckedAt.value = new Date()
   }
@@ -140,7 +151,7 @@ async function getReleases() {
 }
 
 async function switchVersion(tag: string) {
-  updateStatus.value = t('core.header.updateDialog.status.switching')
+  setUpdateStatusKey('core.header.updateDialog.status.switching')
   installLoading.value = true
   try {
     const res = await axios.post('/api/update/do', {
@@ -148,20 +159,20 @@ async function switchVersion(tag: string) {
       proxy: localStorage.getItem('selectedGitHubProxy') || '',
       channel: sourceUpdateChannel.value
     })
-    updateStatus.value = res.data.message
+    setUpdateStatusText(res.data.message)
     if (res.data.status == 'ok') {
       setTimeout(() => window.location.reload(), 1000)
     }
   } catch (err) {
     console.log(err)
-    updateStatus.value = err as any
+    setUpdateStatusText(err)
   } finally {
     installLoading.value = false
   }
 }
 
 async function updateToLatestFromChannel() {
-  updateStatus.value = t('core.header.updateDialog.status.switching')
+  setUpdateStatusKey('core.header.updateDialog.status.switching')
   installLoading.value = true
   try {
     const res = await axios.post('/api/update/do', {
@@ -169,13 +180,13 @@ async function updateToLatestFromChannel() {
       proxy: localStorage.getItem('selectedGitHubProxy') || '',
       channel: sourceUpdateChannel.value
     })
-    updateStatus.value = res.data.message
+    setUpdateStatusText(res.data.message)
     if (res.data.status == 'ok') {
       setTimeout(() => window.location.reload(), 1000)
     }
   } catch (err) {
     console.log(err)
-    updateStatus.value = err as any
+    setUpdateStatusText(err)
   } finally {
     installLoading.value = false
   }
@@ -183,19 +194,19 @@ async function updateToLatestFromChannel() {
 
 async function updateDashboard() {
   updatingDashboardLoading.value = true
-  updateStatus.value = t('core.header.updateDialog.status.updating')
+  setUpdateStatusKey('core.header.updateDialog.status.updating')
   try {
     const res = await axios.post('/api/update/dashboard', {
       channel: dashboardUpdateChannel.value,
       proxy: localStorage.getItem('selectedGitHubProxy') || ''
     })
-    updateStatus.value = res.data.message
+    setUpdateStatusText(res.data.message)
     if (res.data.status == 'ok') {
       setTimeout(() => window.location.reload(), 1000)
     }
   } catch (err) {
     console.log(err)
-    updateStatus.value = err as any
+    setUpdateStatusText(err)
   } finally {
     updatingDashboardLoading.value = false
   }
@@ -248,14 +259,19 @@ const dialogModel = computed({
       >
         <div class="pa-6">
           <div class="d-flex align-center mb-6">
-            <v-avatar color="primary" rounded="md" size="48" class="mr-4">
-              <v-icon size="28" color="white">mdi-autorenew</v-icon>
+            <v-avatar color="primary" rounded="md" size="64" class="mr-4">
+              <v-icon size="42" color="white">mdi-autorenew</v-icon>
             </v-avatar>
             <div>
-              <div class="text-subtitle-6 font-weight-bold text-uppercase text-medium-emphasis">
+              <div class="text-subtitle-6 font-weight-bold text-uppercase text-medium-emphasis mb-1">
                 {{ t('core.header.updateDialog.title') }}
               </div>
-              <div class="text-h6 font-weight-black">{{ activeVersionText }}</div>
+              <div class="text-body-2 text-medium-emphasis mb-1" style="line-height: 1.2">
+                {{ t('core.header.updateDialog.tabs.source') }}: {{ props.botCurrVersion }}
+              </div>
+              <div class="text-body-2 text-medium-emphasis mb-1" style="line-height: 1.2">
+                {{ t('core.header.updateDialog.tabs.dashboard') }}: {{ props.dashboardCurrentVersion }}
+              </div>
             </div>
           </div>
 
@@ -496,7 +512,7 @@ const dialogModel = computed({
                 <template v-else>
                   <div class="d-flex align-center justify-space-between mb-6" style="gap: 12px">
                     <div>
-                      <h3 class="text-h5 font-weight-bold mb-1">{{ t('core.header.updateDialog.channel.landfill') }}</h3>
+                      <h3 class="text-h4 font-weight-bold mb-1">{{ t('core.header.updateDialog.channel.landfill') }}</h3>
                       <div class="text-body-2 text-medium-emphasis">{{ t('core.header.updateDialog.channel.landfillTip') }}</div>
                     </div>
                     <v-select
@@ -547,7 +563,7 @@ const dialogModel = computed({
               <div class="update-pane">
                 <div class="update-pane__head">
                   <div class="d-flex align-center justify-space-between" style="gap: 12px">
-                    <h3 class="text-h5 font-weight-bold">{{ t('core.header.updateDialog.tabs.dashboard') }}</h3>
+                    <h3 class="text-h4 font-weight-bold">{{ t('core.header.updateDialog.tabs.dashboard') }}</h3>
                   </div>
 
                   <div
@@ -571,7 +587,7 @@ const dialogModel = computed({
                 <v-card border flat class="pa-6 dashboard-update-card">
                   <div class="dashboard-update-top">
                     <div class="dashboard-update-label">
-                      <div class="text-overline text-medium-emphasis mb-0">
+                      <div class="text-body-4 text-medium-emphasis font-weight-bold mb-0">
                         {{ t('core.header.updateDialog.dashboardUpdate.currentVersion') }}
                       </div>
                       <v-chip
@@ -579,7 +595,7 @@ const dialogModel = computed({
                         color="warning"
                         rounded="lg"
                         label
-                        size="x-small"
+                        size="small"
                         class="dashboard-update-status-chip"
                       >
                         {{ t('core.header.updateDialog.dashboardUpdate.hasNewVersion') }}
@@ -589,7 +605,7 @@ const dialogModel = computed({
                         color="success"
                         rounded="lg"
                         label
-                        size="x-small"
+                        size="small"
                         class="dashboard-update-status-chip"
                       >
                         {{ t('core.header.updateDialog.dashboardUpdate.isLatest') }}
@@ -598,7 +614,7 @@ const dialogModel = computed({
 
                     <v-btn
                       color="primary"
-                      size="large"
+                      width="120"
                       prepend-icon="mdi-update"
                       @click="updateDashboard()"
                       :loading="updatingDashboardLoading"
@@ -765,7 +781,7 @@ const dialogModel = computed({
 }
 
 .dashboard-update-status-chip {
-  height: 20px;
+  height: 25px;
 }
 
 @media (max-width: 600px) {
