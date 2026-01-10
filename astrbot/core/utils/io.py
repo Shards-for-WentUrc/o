@@ -1,4 +1,5 @@
 import base64
+import json
 import logging
 import os
 import shutil
@@ -238,6 +239,39 @@ async def get_dashboard_version():
                 v = f.read().strip()
                 return v
     return None
+
+
+def get_dashboard_channel() -> str:
+    """获取 WebUI 下载渠道。
+
+    优先级：环境变量 > cmd_config.json > 默认 official。
+
+    - env: `ASTRBOT_DASHBOARD_CHANNEL`（建议）或 `ASTRBOT_UPDATE_CHANNEL`（兼容）
+    - config: `data/cmd_config.json` -> `dashboard.channel`
+    """
+
+    env_channel = os.environ.get("ASTRBOT_DASHBOARD_CHANNEL") or os.environ.get(
+        "ASTRBOT_UPDATE_CHANNEL",
+    )
+    if env_channel:
+        env_channel = env_channel.strip().lower()
+        return "landfill" if env_channel == "landfill" else "official"
+
+    cfg_path = Path(get_astrbot_data_path()).absolute() / "cmd_config.json"
+    if cfg_path.exists():
+        try:
+            cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+            channel = (
+                (cfg.get("dashboard") or {}).get("channel")
+                or (cfg.get("dashboard") or {}).get("update_channel")
+                or "official"
+            )
+            channel = str(channel).strip().lower()
+            return "landfill" if channel == "landfill" else "official"
+        except Exception:
+            return "official"
+
+    return "official"
 
 
 async def download_dashboard(

@@ -9,7 +9,12 @@ from astrbot.core import LogBroker, LogManager, db_helper, logger
 from astrbot.core.config.default import VERSION
 from astrbot.core.initial_loader import InitialLoader
 from astrbot.core.utils.astrbot_path import get_astrbot_data_path
-from astrbot.core.utils.io import download_dashboard, get_dashboard_version
+from astrbot.core.utils.io import (
+    download_dashboard,
+    download_landfill_dashboard_nightly,
+    get_dashboard_channel,
+    get_dashboard_version,
+)
 
 # 将父目录添加到 sys.path
 sys.path.append(Path(__file__).parent.as_posix())
@@ -62,12 +67,21 @@ async def check_dashboard_files(webui_dir: str | None = None):
                 )
         return data_dist_path
 
-    logger.info(
-        "开始下载管理面板文件...高峰期（晚上）可能导致较慢的速度。如多次下载失败，请前往 https://github.com/AstrBotDevs/AstrBot/releases/latest 下载 dist.zip，并将其中的 dist 文件夹解压至 data 目录下。",
-    )
+    channel = get_dashboard_channel()
+    if channel == "landfill":
+        logger.info(
+            "开始下载管理面板文件（Landfill Nightly）...如多次下载失败，请前往 https://github.com/LandfillLand/LandfillBot/releases/tag/nightly 下载 dist.zip，并将其中的 dist 文件夹解压至 data 目录下。",
+        )
+    else:
+        logger.info(
+            "开始下载管理面板文件...高峰期（晚上）可能导致较慢的速度。如多次下载失败，请前往 https://github.com/AstrBotDevs/AstrBot/releases/latest 下载 dist.zip，并将其中的 dist 文件夹解压至 data 目录下。",
+        )
 
     try:
-        await download_dashboard(version=f"v{VERSION}", latest=False)
+        if channel == "landfill":
+            await download_landfill_dashboard_nightly()
+        else:
+            await download_dashboard(version=f"v{VERSION}", latest=False)
     except Exception as e:
         logger.critical(f"下载管理面板文件失败: {e}。")
         return None
