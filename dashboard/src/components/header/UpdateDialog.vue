@@ -624,8 +624,6 @@ const dialogModel = computed({
                       {{ t('core.header.updateDialog.dashboardUpdate.downloadAndUpdate') }}
                     </v-btn>
                   </div>
-
-                  <div class="text-h4 font-weight-bold mt-3">{{ dashboardCurrentVersion }}</div>
                 </v-card>
               </div>
             </v-window-item>
