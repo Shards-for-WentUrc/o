@@ -58,7 +58,7 @@ jobs:
           cd ..
 
           cat <<EOF > release_note.md
-          ### **Frontend Artifacts Only**
+          ### **Frontend Artifacts Only / 仅前端产物**
 
           > [!WARNING]
           >
