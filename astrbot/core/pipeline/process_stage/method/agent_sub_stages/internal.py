@@ -83,6 +83,10 @@ class InternalAgentSubStage(Stage):
             self.max_step = 30
         self.show_tool_use: bool = settings.get("show_tool_use_status", True)
         self.show_reasoning = settings.get("display_reasoning_text", False)
+        self.sanitize_context_by_modalities: bool = settings.get(
+            "sanitize_context_by_modalities",
+            False,
+        )
         self.kb_agentic_mode: bool = conf.get("kb_agentic_mode", False)
 
         file_extract_conf: dict = settings.get("file_extract", {})
@@ -222,7 +226,16 @@ class InternalAgentSubStage(Stage):
         if req.image_urls:
             provider_cfg = provider.provider_config.get("modalities", ["image"])
             if "image" not in provider_cfg:
-                logger.debug(f"用户设置提供商 {provider} 不支持图像，清空图像列表。")
+                logger.debug(
+                    f"用户设置提供商 {provider} 不支持图像，将图像替换为占位符。"
+                )
+                # 为每个图片添加占位符到 prompt
+                image_count = len(req.image_urls)
+                placeholder = " ".join(["[图片]"] * image_count)
+                if req.prompt:
+                    req.prompt = f"{placeholder} {req.prompt}"
+                else:
+                    req.prompt = placeholder
                 req.image_urls = []
         if req.func_tool:
             provider_cfg = provider.provider_config.get("modalities", ["tool_use"])
@@ -232,6 +245,97 @@ class InternalAgentSubStage(Stage):
                     f"用户设置提供商 {provider} 不支持工具使用，清空工具列表。",
                 )
                 req.func_tool = None
+
+    def _sanitize_context_by_modalities(
+        self,
+        provider: Provider,
+        req: ProviderRequest,
+    ) -> None:
+        """Sanitize `req.contexts` (including history) by current provider modalities."""
+        if not self.sanitize_context_by_modalities:
+            return
+
+        if not isinstance(req.contexts, list) or not req.contexts:
+            return
+
+        modalities = provider.provider_config.get("modalities", None)
+        # if modalities is not configured, do not sanitize.
+        if not modalities or not isinstance(modalities, list):
+            return
+
+        supports_image = bool("image" in modalities)
+        supports_tool_use = bool("tool_use" in modalities)
+
+        if supports_image and supports_tool_use:
+            return
+
+        sanitized_contexts: list[dict] = []
+        removed_image_blocks = 0
+        removed_tool_messages = 0
+        removed_tool_calls = 0
+
+        for msg in req.contexts:
+            if not isinstance(msg, dict):
+                continue
+
+            role = msg.get("role")
+            if not role:
+                continue
+
+            new_msg: dict = msg
+
+            # tool_use sanitize
+            if not supports_tool_use:
+                if role == "tool":
+                    # tool response block
+                    removed_tool_messages += 1
+                    continue
+                if role == "assistant" and "tool_calls" in new_msg:
+                    # assistant message with tool calls
+                    if "tool_calls" in new_msg:
+                        removed_tool_calls += 1
+                    new_msg.pop("tool_calls", None)
+                    new_msg.pop("tool_call_id", None)
+
+            # image sanitize
+            if not supports_image:
+                content = new_msg.get("content")
+                if isinstance(content, list):
+                    filtered_parts: list = []
+                    removed_any_image = False
+                    for part in content:
+                        if isinstance(part, dict):
+                            part_type = str(part.get("type", "")).lower()
+                            if part_type in {"image_url", "image"}:
+                                removed_any_image = True
+                                removed_image_blocks += 1
+                                continue
+                        filtered_parts.append(part)
+
+                    if removed_any_image:
+                        new_msg["content"] = filtered_parts
+
+            # drop empty assistant messages (e.g. only tool_calls without content)
+            if role == "assistant":
+                content = new_msg.get("content")
+                has_tool_calls = bool(new_msg.get("tool_calls"))
+                if not has_tool_calls:
+                    if not content:
+                        continue
+                    if isinstance(content, str) and not content.strip():
+                        continue
+
+            sanitized_contexts.append(new_msg)
+
+        if removed_image_blocks or removed_tool_messages or removed_tool_calls:
+            logger.debug(
+                "sanitize_context_by_modalities applied: "
+                f"removed_image_blocks={removed_image_blocks}, "
+                f"removed_tool_messages={removed_tool_messages}, "
+                f"removed_tool_calls={removed_tool_calls}"
+            )
+
+        req.contexts = sanitized_contexts
 
     def _plugin_tool_fix(
         self,
@@ -396,8 +500,16 @@ class InternalAgentSubStage(Stage):
             # 检查消息内容是否有效，避免空消息触发钩子
             has_provider_request = event.get_extra("provider_request") is not None
             has_valid_message = bool(event.message_str and event.message_str.strip())
+            # 检查是否有图片或其他媒体内容
+            has_media_content = any(
+                isinstance(comp, (Image, File)) for comp in event.message_obj.message
+            )
 
-            if not has_provider_request and not has_valid_message:
+            if (
+                not has_provider_request
+                and not has_valid_message
+                and not has_media_content
+            ):
                 logger.debug("skip llm request: empty message and no provider_request")
                 return
 
@@ -478,6 +590,9 @@ class InternalAgentSubStage(Stage):
 
                 # filter tools, only keep tools from this pipeline's selected plugins
                 self._plugin_tool_fix(event, req)
+
+                # sanitize contexts (including history) by provider modalities
+                self._sanitize_context_by_modalities(provider, req)
 
                 stream_to_general = (
                     self.unsupported_streaming_strategy == "turn_off"
