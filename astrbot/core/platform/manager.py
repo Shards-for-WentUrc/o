@@ -32,6 +32,17 @@ class PlatformManager:
         约定整个项目中对 unique_session 的引用都从 default 的配置中获取"""
         self.event_queue = event_queue
 
+    def _is_valid_platform_id(self, platform_id: str | None) -> bool:
+        if not platform_id:
+            return False
+        return ":" not in platform_id and "!" not in platform_id
+
+    def _sanitize_platform_id(self, platform_id: str | None) -> tuple[str | None, bool]:
+        if not platform_id:
+            return platform_id, False
+        sanitized = platform_id.replace(":", "_").replace("!", "_")
+        return sanitized, sanitized != platform_id
+
     def _get_platform_lock(self, platform_id: str) -> asyncio.Lock:
         lock = self._platform_op_locks.get(platform_id)
         if lock is None:
@@ -65,6 +76,22 @@ class PlatformManager:
         try:
             if not platform_config["enable"]:
                 return
+            platform_id = platform_config.get("id")
+            if not self._is_valid_platform_id(platform_id):
+                sanitized_id, changed = self._sanitize_platform_id(platform_id)
+                if sanitized_id and changed:
+                    logger.warning(
+                        "平台 ID %r 包含非法字符 ':' 或 '!'，已替换为 %r。",
+                        platform_id,
+                        sanitized_id,
+                    )
+                    platform_config["id"] = sanitized_id
+                    self.astrbot_config.save_config()
+                else:
+                    logger.error(
+                        f"平台 ID {platform_id!r} 不能为空，跳过加载该平台适配器。",
+                    )
+                    return
 
             platform_id = platform_config.get("id")
             if platform_id and platform_id in self._inst_map:
