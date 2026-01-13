@@ -197,7 +197,7 @@
           </v-col>
         </v-row>
 
-        <v-row v-else class="installed-extension-grid">
+        <v-row v-else class="installed-extension-grid pb-16">
           <v-col cols="12" md="6" lg="4" v-for="extension in filteredPlugins" :key="extension.name" class="pb-2">
             <ItemCard
               :item="toItemCardExtension(extension)"
