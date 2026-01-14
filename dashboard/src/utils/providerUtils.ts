@@ -2,6 +2,8 @@
  * 提供商相关的工具函数
  */
 
+import modelstackLogo from '@/assets/images/provider_logos/modelstack.svg'
+
 export type ProviderTemplate = {
   type: string
   [key: string]: unknown
@@ -47,7 +49,8 @@ export function getProviderIcon(type: string): string {
       'https://registry.npmmirror.com/@lobehub/icons-static-svg/latest/files/icons/microsoft.svg',
     vllm: 'https://registry.npmmirror.com/@lobehub/icons-static-svg/latest/files/icons/vllm.svg',
     groq: 'https://registry.npmmirror.com/@lobehub/icons-static-svg/latest/files/icons/groq.svg',
-    modelstack: new URL('@/assets/images/provider_logos/modelstack.svg', import.meta.url).href,
+    
+    modelstack: modelstackLogo,
     tokenpony: 'https://tokenpony.cn/tokenpony-web/logo.png',
     compshare: 'https://compshare.cn/favicon.ico'
   }
