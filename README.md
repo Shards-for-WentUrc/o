@@ -1,4 +1,4 @@
-# WastelandBot (Based on [AstrBot](https://github.com/AstrBotDevs/AstrBot)) 
+# Nebula (Based on [AstrBot](https://github.com/AstrBotDevs/AstrBot)) 
 
 ## ⚖️ Fork Disclaimer & License Agreement
 > [!Note]
