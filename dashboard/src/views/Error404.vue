@@ -13,7 +13,7 @@ const goBack = () => {
 <template>
   <v-container class="error-container d-flex align-center justify-center fill-height">
     <div class="text-center">
-      <div class="mb-10 d-flex align-center justify-center">
+      <div class="mb-10 d-flex align-center justify-center error-header">
         <v-icon 
           size="120" 
           color="primary" 
@@ -28,7 +28,7 @@ const goBack = () => {
         </h1>
       </div>
 
-      <div class="d-flex justify-center gap-4 align-center flex-wrap">
+      <div class="d-flex justify-center gap-4 align-center action-buttons">
         <v-btn
           color="primary"
           size="x-large"
@@ -37,7 +37,7 @@ const goBack = () => {
           prepend-icon="mdi-home"
           to="/"
           elevation="4"
-          class="px-8"
+          class="px-4 px-sm-8" 
         >
           {{ t('core.common.error404.returnHome') }}
         </v-btn>
@@ -49,7 +49,7 @@ const goBack = () => {
           rounded="sm"
           prepend-icon="mdi-arrow-left"
           @click="goBack"
-          class="px-8 ml-4"
+          class="px-4 px-sm-8"
         >
           {{ t('core.common.error404.goBack') }}
         </v-btn>
@@ -77,20 +77,18 @@ const goBack = () => {
 }
 
 @keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
 }
 
 @media (max-width: 600px) {
-  .d-flex.align-center.justify-center {
+  .error-header {
     flex-direction: column;
+  }
+
+  .action-buttons {
+    flex-direction: row !important;
   }
   
   .gradient-text {
@@ -100,6 +98,12 @@ const goBack = () => {
   .v-icon {
     margin-right: 0 !important;
     margin-bottom: 16px;
+  }
+  
+
+  .action-buttons .v-btn {
+    font-size: 0.9rem; 
+    min-width: auto; 
   }
 }
 </style>
