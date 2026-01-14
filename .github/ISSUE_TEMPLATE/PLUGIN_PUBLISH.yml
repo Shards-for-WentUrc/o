@@ -1,4 +1,4 @@
-name: 🥳 发布插件 (请前往 AstrBot 仓库)
+name: 发布插件 (请前往 AstrBot 仓库)
 description: 此处不处理插件收录，请点击查看详情
 title: "[Invalid] 请前往 AstrBot 官方仓库提交插件"
 labels: ["invalid"]
@@ -15,15 +15,15 @@ body:
         请前往 **AstrBot 官方仓库** 提交您的插件信息。
         Please submit your plugin to the official AstrBot repository.
 
-        ### 👉 前往 AstrBot 官方仓库 [Issues](https://github.com/AstrBotDevs/AstrBot/issues)
-        ### ✨ 不过，这里提供一种便捷的方式 [提交插件](https://pa.i0c.cc/submit)
+        ### 1. 前往 AstrBot 官方仓库 [Issues](https://github.com/AstrBotDevs/AstrBot/issues)
+        ### 2. 或者使用便捷方式 [提交插件](https://pa.i0c.cc/submit)
 
-        *(请在那里选择对应的插件发布模板进行提交，或者选择便捷的方式提交插件)*
+        (请在那里选择对应的插件发布模板进行提交，或者选择便捷的方式提交插件)
 
   - type: checkboxes
     id: confirmation
-    label: 确认
     attributes:
+      label: 确认(Confirmation)
       options:
         - label: 我已知晓此处不受理插件提交，我将前往上述链接进行操作。
           required: true
