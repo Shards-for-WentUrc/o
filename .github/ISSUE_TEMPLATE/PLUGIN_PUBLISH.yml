@@ -15,7 +15,6 @@ body:
         请前往 **AstrBot 官方仓库** 提交您的插件信息。
         Please submit your plugin to the official AstrBot repository.
 
-
         ### 👉 前往 AstrBot 官方仓库 [Issues](https://github.com/AstrBotDevs/AstrBot/issues)
         ### ✨ 不过，这里提供一种便捷的方式 [提交插件](https://pa.i0c.cc/submit)
 
@@ -23,6 +22,7 @@ body:
 
   - type: checkboxes
     id: confirmation
+    label: 确认
     attributes:
       options:
         - label: 我已知晓此处不受理插件提交，我将前往上述链接进行操作。
