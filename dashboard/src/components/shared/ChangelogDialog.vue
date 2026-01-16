@@ -6,6 +6,7 @@ import 'markstream-vue/index.css';
 import 'katex/dist/katex.min.css';
 import axios from 'axios';
 import { useTheme } from 'vuetify';
+import { shikiWasmReady } from '@/composables/shikiWasm';
 
 enableKatex();
 enableMermaid();
@@ -191,7 +192,15 @@ getCurrentVersion();
             {{ changelogError }}
           </v-alert>
           <div v-else-if="changelogContent" class="changelog-content">
-            <MarkdownRender :content="changelogContent" :typewriter="false" class="markdown-content" :class="{ dark: isDark }" />
+            <MarkdownRender
+              :key="shikiWasmReady ? 'shiki' : 'pre'"
+              :content="changelogContent"
+              :typewriter="false"
+              :is-dark="isDark"
+              :render-code-blocks-as-pre="false"
+              class="markdown-content"
+              :class="{ dark: isDark }"
+            />
           </div>
         </div>
       </v-card-text>

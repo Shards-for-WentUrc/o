@@ -11,10 +11,17 @@ import VueApexCharts from 'vue3-apexcharts';
 import print from 'vue3-print-nb';
 import { loader } from '@guolao/vue-monaco-editor'
 import axios from 'axios';
+import { initShikiWasm } from '@/composables/shikiWasm';
+import { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-vue';
 
-// 初始化新的i18n系统，等待完成后再挂载应用
+// 初始化i18n系统，等待完成后再挂载应用
 setupI18n().then(async () => {
   console.log('🌍 i18n系统初始化完成');
+
+  await initShikiWasm();
+
+  // Prefer Shiki-based code blocks over plain <pre> / Monaco.
+  setCustomComponents({ code_block: MarkdownCodeBlockNode });
   
   const app = createApp(App);
   app.use(router);
@@ -32,7 +39,9 @@ setupI18n().then(async () => {
     vuetify.theme.global.name.value = customizer.uiTheme;
   });
 }).catch(async error => {
-  console.error('❌ 新i18n系统初始化失败:', error);
+  console.error('❌ i18n系统初始化失败:', error);
+
+  await initShikiWasm();
   
   // 即使i18n初始化失败，也要挂载应用（使用回退机制）
   const app = createApp(App);

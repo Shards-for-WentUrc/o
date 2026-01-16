@@ -7,6 +7,7 @@ import 'katex/dist/katex.min.css'
 import { useI18n } from '@/i18n/composables'
 import { useAuthStore } from '@/stores/auth'
 import { useDisplay, useTheme } from 'vuetify'
+import { shikiWasmReady } from '@/composables/shikiWasm'
 
 type UpdateChannel = 'official' | 'nebula'
 
@@ -424,7 +425,15 @@ const dialogModel = computed({
                     rounded="lg"
                   >
                     <div style="max-height: 200px; overflow-y: auto" class="text-body-2">
-                      <MarkdownRender :content="releaseMessage" :typewriter="false" class="markdown-content" :class="{ dark: isDark }" />
+                      <MarkdownRender
+                        :key="shikiWasmReady ? 'shiki' : 'pre'"
+                        :content="releaseMessage"
+                        :typewriter="false"
+                        :is-dark="isDark"
+                        :render-code-blocks-as-pre="false"
+                        class="markdown-content"
+                        :class="{ dark: isDark }"
+                      />
                     </div>
                   </v-alert>
 
@@ -657,7 +666,15 @@ const dialogModel = computed({
       </v-card-title>
       <v-divider />
       <v-card-text class="pa-6" style="font-size: 16px; max-height: 500px; overflow-y: auto; line-height: 1.6">
-        <MarkdownRender :content="releaseNotesContent" :typewriter="false" class="markdown-content" :class="{ dark: isDark }" />
+        <MarkdownRender
+          :key="shikiWasmReady ? 'shiki' : 'pre'"
+          :content="releaseNotesContent"
+          :typewriter="false"
+          :is-dark="isDark"
+          :render-code-blocks-as-pre="false"
+          class="markdown-content"
+          :class="{ dark: isDark }"
+        />
       </v-card-text>
     </v-card>
   </v-dialog>

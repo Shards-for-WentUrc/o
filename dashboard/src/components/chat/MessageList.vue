@@ -101,8 +101,12 @@
                                         <span class="reasoning-label">{{ tm('reasoning.thinking') }}</span>
                                     </div>
                                     <div v-if="isReasoningExpanded(index)" class="reasoning-content">
-                                        <MarkdownRender :content="msg.content.reasoning"
+                                        <MarkdownRender
+                                            :key="shikiWasmReady ? 'shiki' : 'pre'"
+                                            :content="msg.content.reasoning"
                                             class="reasoning-text markdown-content" :typewriter="false"
+                                            :is-dark="isDark || isMarkdownDark"
+                                            :render-code-blocks-as-pre="!shikiWasmReady"
                                             :class="{ dark: isDark }"
                                             :style="isDark ? { opacity: '0.85' } : {}" />
                                     </div>
@@ -183,7 +187,10 @@
                                     <template v-else-if="part.type === 'plain' && part.text && part.text.trim()">
                                         <pre v-if="shouldRenderAsPlainPre(part.text)" class="bot-plain-pre">{{ formatPlainPreText(part.text) }}</pre>
                                         <MarkdownRender v-else
+                                            :key="shikiWasmReady ? 'shiki' : 'pre'"
                                             :content="part.text" :typewriter="false"
+                                            :is-dark="isDark || isMarkdownDark"
+                                            :render-code-blocks-as-pre="!shikiWasmReady"
                                             class="markdown-content" :class="{ dark: isDark }" />
                                     </template>
 
@@ -255,8 +262,7 @@
                                         </div>
                                         <div class="stats-menu-row">
                                             <span class="stats-menu-label">{{ tm('stats.outputTokens') }}</span>
-                                            <span class="stats-menu-value">{{ msg.content.agentStats.token_usage.output
-                                                || 0 }}</span>
+                                            <span class="stats-menu-value">{{ msg.content.agentStats.token_usage.output || 0 }}</span>
                                         </div>
                                         <div class="stats-menu-row"
                                             v-if="msg.content.agentStats.token_usage.input_cached > 0">
@@ -309,17 +315,20 @@
 
 <script lang="ts">
 import type { PropType } from 'vue'
+import { computed } from 'vue';
 import { useI18n, useModuleI18n } from '@/i18n/composables';
-import { MarkdownRender, enableKatex, enableMermaid, setCustomComponents } from 'markstream-vue';
+import { MarkdownCodeBlockNode, MarkdownRender, enableKatex, enableMermaid, setCustomComponents } from 'markstream-vue';
 import 'markstream-vue/index.css';
 import 'katex/dist/katex.min.css';
 import axios from 'axios';
 import IPythonToolBlock from '@/components/chat/message_list_comps/IPythonToolBlock.vue';
 import RefNode from '@/components/chat/message_list_comps/RefNode.vue';
 import ActionRef from '@/components/chat/message_list_comps/ActionRef.vue';
+import { shikiWasmReady } from '@/composables/shikiWasm';
+import { useCustomizerStore } from '@/stores/customizer';
 
 // 注册自定义 ref 组件
-setCustomComponents('message-list', { ref: RefNode });
+setCustomComponents('message-list', { ref: RefNode, code_block: MarkdownCodeBlockNode });
 
 export default {
     name: 'MessageList',
@@ -352,10 +361,14 @@ export default {
         enableMermaid();
         const { t } = useI18n();
         const { tm } = useModuleI18n('features/chat');
+        const customizer = useCustomizerStore();
+        const isMarkdownDark = computed(() => customizer.uiTheme === 'PurpleThemeDark');
 
         return {
             t,
             tm,
+            shikiWasmReady,
+            isMarkdownDark,
         };
     },
     provide() {
@@ -783,30 +796,8 @@ export default {
         initCodeCopyButtons() {
             this.$nextTick(() => {
                 const container = this.getMessageContainerEl();
-                const codeBlocks = container?.querySelectorAll<HTMLElement>('pre code') || [];
-                codeBlocks.forEach((codeBlock, index) => {
-                    const pre = codeBlock.parentElement as HTMLElement | null;
-                    if (pre && !pre.querySelector('.copy-code-btn')) {
-                        const button = document.createElement('button');
-                        button.className = 'copy-code-btn';
-                        button.innerHTML = this.getCopyIconSvg();
-                        button.title = '复制代码';
-                        button.addEventListener('click', async () => {
-                            const ok = await this.copyTextToClipboard(codeBlock.textContent || '');
-                            if (ok) {
-                                // 显示复制成功提示
-                                button.innerHTML = this.getSuccessIconSvg();
-                                button.style.color = '#4caf50';
-                                setTimeout(() => {
-                                    button.innerHTML = this.getCopyIconSvg();
-                                    button.style.color = '';
-                                }, 2000);
-                            }
-                        });
-                        pre.style.position = 'relative';
-                        pre.appendChild(button);
-                    }
-                });
+                const buttons = container?.querySelectorAll<HTMLElement>('.copy-code-btn') || [];
+                buttons.forEach((btn) => btn.remove());
             });
         },
 
