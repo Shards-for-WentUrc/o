@@ -12,8 +12,13 @@ import githubHljsCssUrl from 'highlight.js/styles/github.css?url';
 import githubDarkHljsCssUrl from 'highlight.js/styles/github-dark.css?url';
 
 import print from 'vue3-print-nb';
-import { loader } from '@guolao/vue-monaco-editor'
 import axios from 'axios';
+
+import { loader } from '@guolao/vue-monaco-editor'
+import * as monaco from 'monaco-editor';
+import setupMonacoWorkers from '@/utils/monacoSetup';
+
+setupMonacoWorkers();
 
 function applyHljsTheme(isDark: boolean) {
   if (typeof document === 'undefined') return;
@@ -87,8 +92,7 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
+// 这里依然保留，告诉 loader 使用我们配置好环境的 monaco 实例
 loader.config({
-  paths: {
-    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.54.0/min/vs',
-  },
+  monaco,
 })
