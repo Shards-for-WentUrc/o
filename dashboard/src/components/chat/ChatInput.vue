@@ -436,6 +436,18 @@ defineExpose({
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+@media (max-width: 768px) {
+    .preview-image {
+        object-fit: contain;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .preview-image {
+        object-fit: contain;
+    }
+}
+
 .audio-chip,
 .file-chip {
     height: 36px;

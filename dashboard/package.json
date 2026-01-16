@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@guolao/vue-monaco-editor": "^1.5.4",
+    "@shikijs/engine-oniguruma": "^3.21.0",
     "apexcharts": "3.42.0",
     "axios": ">=1.6.2 <1.10.0 || >1.10.0 <2.0.0",
     "dompurify": "^3.3.1",
@@ -25,12 +26,10 @@
     "lodash": "4.17.21",
     "markdown-it": "^14.1.0",
     "markstream-vue": "^0.0.6-beta.1",
-    "monaco-editor": "0.52.2",
     "mermaid": "^11.12.2",
     "pinia": "2.1.6",
     "pinyin-pro": "^3.26.0",
     "shiki": "^3.20.0",
-    "stream-markdown": "^0.0.13",
     "stream-monaco": "^0.0.15",
     "vee-validate": "4.11.3",
     "vite-plugin-vuetify": "2.1.2",
@@ -52,5 +51,8 @@
     "typescript": "5.7.3",
     "vite": "5.4.21",
     "vue-tsc": "^2.1.6"
+  },
+  "pnpm": {
+    "overrides": {}
   }
 }

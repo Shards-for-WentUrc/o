@@ -1049,6 +1049,24 @@ export default {
     margin-block: 1rem;
 }
 
+@media (max-width: 768px) {
+    :deep(.node-slot img),
+    :deep(.node-content img),
+    :deep(img.max-w-96) {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    :deep(.node-slot img),
+    :deep(.node-content img),
+    :deep(img.max-w-96) {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+}
+
 :deep(.list-node) {
     margin-top: .5rem;
     margin-bottom: .5rem;
@@ -1392,6 +1410,46 @@ export default {
     transition: transform 0.2s ease;
 }
 
+@media (max-width: 768px) {
+    .image-attachments {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .image-attachment {
+        max-width: 100%;
+    }
+
+    .attached-image {
+        width: 100%;
+        max-width: 72vw;
+        height: auto;
+        max-height: 45vh;
+        object-fit: contain;
+    }
+
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .image-attachments {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .image-attachment {
+        max-width: 100%;
+    }
+
+    .attached-image {
+        width: 100%;
+        max-width: 72vw;
+        height: auto;
+        max-height: 45vh;
+        object-fit: contain;
+    }
+
+}
+
 .audio-attachment {
     margin-top: 8px;
     min-width: 250px;
@@ -1427,6 +1485,18 @@ export default {
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.2s ease;
+}
+
+@media (max-width: 768px) {
+    .bot-embedded-image {
+        max-width: 85%;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .bot-embedded-image {
+        max-width: 85%;
+    }
 }
 
 .embedded-audio {
@@ -1761,6 +1831,20 @@ export default {
 .markdown-content {
     max-width: 100%;
     line-height: 1.6;
+}
+
+.markdown-content img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .markdown-content img {
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
+    }
 }
 
 

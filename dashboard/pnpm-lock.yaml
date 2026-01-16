@@ -11,6 +11,9 @@ importers:
       '@guolao/vue-monaco-editor':
         specifier: ^1.5.4
         version: 1.6.0(monaco-editor@0.52.2)(vue@3.5.26(typescript@5.7.3))
+      '@shikijs/engine-oniguruma':
+        specifier: ^3.21.0
+        version: 3.21.0
       apexcharts:
         specifier: 3.42.0
         version: 3.42.0
@@ -44,9 +47,6 @@ importers:
       mermaid:
         specifier: ^11.12.2
         version: 11.12.2
-      monaco-editor:
-        specifier: 0.52.2
-        version: 0.52.2
       pinia:
         specifier: 2.1.6
         version: 2.1.6(typescript@5.7.3)(vue@3.5.26(typescript@5.7.3))
@@ -56,9 +56,6 @@ importers:
       shiki:
         specifier: ^3.20.0
         version: 3.21.0
-      stream-markdown:
-        specifier: ^0.0.13
-        version: 0.0.13(shiki@3.21.0)
       stream-monaco:
         specifier: ^0.0.15
         version: 0.0.15(monaco-editor@0.52.2)
@@ -3526,6 +3523,7 @@ snapshots:
   stream-markdown@0.0.13(shiki@3.21.0):
     dependencies:
       shiki: 3.21.0
+    optional: true
 
   stream-monaco@0.0.15(monaco-editor@0.52.2):
     dependencies:
