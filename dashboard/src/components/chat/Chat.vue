@@ -9,12 +9,10 @@
                     :sessions="sessions"
                     :selectedSessions="selectedSessions"
                     :currSessionId="currSessionId"
-                    :selectedProjectId="selectedProjectId"
                     :isDark="isDark"
                     :chatboxMode="chatboxMode"
                     :isMobile="isMobile"
                     :mobileMenuOpen="mobileMenuOpen"
-                    :projects="projects"
                     @newChat="handleNewChat"
                     @selectConversation="handleSelectConversation"
                     @editTitle="showEditTitleDialog"
@@ -22,10 +20,6 @@
                     @closeMobileSidebar="closeMobileSidebar"
                     @toggleTheme="toggleTheme"
                     @toggleFullscreen="toggleFullscreen"
-                    @selectProject="handleSelectProject"
-                    @createProject="showCreateProjectDialog"
-                    @editProject="showEditProjectDialog"
-                    @deleteProject="handleDeleteProject"
                 />
 
                 <!-- 右侧聊天内容区域 -->
@@ -38,17 +32,7 @@
                         </v-btn>
                     </div>
 
-                    <!-- 面包屑导航 -->
-                    <div v-if="currentSessionProject && messages && messages.length > 0" class="breadcrumb-container">
-                        <div class="breadcrumb-content">
-                            <span class="breadcrumb-emoji">{{ currentSessionProject.emoji || '📁' }}</span>
-                            <span class="breadcrumb-project" @click="handleSelectProject(currentSessionProject.project_id)">{{ currentSessionProject.title }}</span>
-                            <v-icon size="small" class="breadcrumb-separator">mdi-chevron-right</v-icon>
-                            <span class="breadcrumb-session">{{ getCurrentSession?.display_name || tm('conversation.newConversation') }}</span>
-                        </div>
-                    </div>
-
-                    <div class="message-list-wrapper" v-if="currSessionId && !selectedProjectId">
+                    <div class="message-list-wrapper" v-if="messages && messages.length > 0">
                         <MessageList :messages="messages" :isDark="isDark"
                             :isStreaming="isStreaming || isConvRunning" 
                             :isLoadingMessages="isLoadingMessages"
@@ -58,75 +42,31 @@
                             ref="messageList" />
                         <div class="message-list-fade" :class="{ 'fade-dark': isDark }"></div>
                     </div>
-                    <ProjectView 
-                        v-else-if="selectedProjectId"
-                        :project="currentProject"
-                        :sessions="projectSessions"
-                        @selectSession="(sessionId) => handleSelectConversation([sessionId])"
-                        @editSessionTitle="showEditTitleDialog"
-                        @deleteSession="handleDeleteConversation"
-                    >
-                        <ChatInput
-                            v-model:prompt="prompt"
-                            :stagedImagesUrl="stagedImagesUrl"
-                            :stagedAudioUrl="stagedAudioUrl"
-                            :stagedFiles="stagedNonImageFiles"
-                            :disabled="isStreaming"
-                            :enableStreaming="enableStreaming"
-                            :isRecording="isRecording"
-                            :session-id="currSessionId || null"
-                            :current-session="getCurrentSession"
-                            :replyTo="replyTo"
-                            @send="handleSendMessage"
-                            @toggleStreaming="toggleStreaming"
-                            @removeImage="removeImage"
-                            @removeAudio="removeAudio"
-                            @removeFile="removeFile"
-                            @startRecording="handleStartRecording"
-                            @stopRecording="handleStopRecording"
-                            @pasteImage="handlePaste"
-                            @fileSelect="handleFileSelect"
-                            @clearReply="clearReply"
-                            ref="chatInputRef"
-                        />
-                    </ProjectView>
-                    <WelcomeView 
-                        v-else
-                        :isLoading="isLoadingMessages"
-                    >
-                        <ChatInput
-                            v-model:prompt="prompt"
-                            :stagedImagesUrl="stagedImagesUrl"
-                            :stagedAudioUrl="stagedAudioUrl"
-                            :stagedFiles="stagedNonImageFiles"
-                            :disabled="isStreaming"
-                            :enableStreaming="enableStreaming"
-                            :isRecording="isRecording"
-                            :session-id="currSessionId || null"
-                            :current-session="getCurrentSession"
-                            :replyTo="replyTo"
-                            @send="handleSendMessage"
-                            @toggleStreaming="toggleStreaming"
-                            @removeImage="removeImage"
-                            @removeAudio="removeAudio"
-                            @removeFile="removeFile"
-                            @startRecording="handleStartRecording"
-                            @stopRecording="handleStopRecording"
-                            @pasteImage="handlePaste"
-                            @fileSelect="handleFileSelect"
-                            @clearReply="clearReply"
-                            ref="chatInputRef"
-                        />
-                    </WelcomeView>
+                    <div class="welcome-container fade-in" v-else>
+                        <div v-if="isLoadingMessages" class="loading-overlay-welcome">
+                            <v-progress-circular
+                                indeterminate
+                                size="48"
+                                width="4"
+                                color="primary"
+                            ></v-progress-circular>
+                        </div>
+                        <div v-else class="welcome-title">
+                            <span>Hello, I'm</span>
+                            <span class="bot-name">
+                                Nebula
+                                <v-icon size="small" class="ml-2 gradient-star">mdi-star-four-points</v-icon>
+                            </span>
+                        </div>
+                    </div>
 
                     <!-- 输入区域 -->
                     <ChatInput
-                        v-if="currSessionId && !selectedProjectId"
                         v-model:prompt="prompt"
                         :stagedImagesUrl="stagedImagesUrl"
                         :stagedAudioUrl="stagedAudioUrl"
                         :stagedFiles="stagedNonImageFiles"
-                        :disabled="isStreaming"
+                        :disabled="isStreaming || isConvRunning || isLoadingMessages"
                         :enableStreaming="enableStreaming"
                         :isRecording="isRecording"
                         :session-id="currSessionId || null"
@@ -155,12 +95,12 @@
             <v-card-title class="dialog-title">{{ tm('actions.editTitle') }}</v-card-title>
             <v-card-text>
                 <v-text-field v-model="editingTitle" :label="tm('conversation.newConversation')" variant="outlined"
-                    hide-details class="mt-2" @keyup.enter="handleSaveTitle" autofocus />
+                    hide-details class="mt-2" @keyup.enter="saveTitle" autofocus />
             </v-card-text>
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn variant="text" @click="editTitleDialog = false" color="grey-darken-1">{{ t('core.common.cancel') }}</v-btn>
-                <v-btn variant="text" @click="handleSaveTitle" color="primary">{{ t('core.common.save') }}</v-btn>
+                <v-btn variant="text" @click="saveTitle" color="primary">{{ t('core.common.save') }}</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -177,13 +117,6 @@
             </v-card-text>
         </v-card>
     </v-dialog>
-
-    <!-- 创建/编辑项目对话框 -->
-    <ProjectDialog
-        v-model="projectDialog"
-        :project="editingProject"
-        @save="handleSaveProject"
-    />
 </template>
 
 <script setup lang="ts">
@@ -191,20 +124,15 @@ import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router';
 import { useCustomizerStore } from '@/stores/customizer';
 import { useI18n, useModuleI18n } from '@/i18n/composables';
+import { useToast } from '@/utils/toast';
 import { useTheme } from 'vuetify';
 import MessageList from '@/components/chat/MessageList.vue';
 import ConversationSidebar from '@/components/chat/ConversationSidebar.vue';
 import ChatInput from '@/components/chat/ChatInput.vue';
-import ProjectDialog from '@/components/chat/ProjectDialog.vue';
-import ProjectView from '@/components/chat/ProjectView.vue';
-import WelcomeView from '@/components/chat/WelcomeView.vue';
-import type { ProjectFormData } from '@/components/chat/ProjectDialog.vue';
 import { useSessions } from '@/composables/useSessions';
 import { useMessages } from '@/composables/useMessages';
 import { useMediaHandling } from '@/composables/useMediaHandling';
 import { useRecording } from '@/composables/useRecording';
-import { useProjects } from '@/composables/useProjects';
-import type { Project } from '@/components/chat/ProjectList.vue';
 
 interface Props {
     chatboxMode?: boolean;
@@ -227,6 +155,40 @@ const imagePreviewDialog = ref(false);
 const previewImageUrl = ref('');
 const isLoadingMessages = ref(false);
 
+let resyncTimer: number | null = null;
+
+function scheduleResyncCurrentSession() {
+    if (resyncTimer !== null) {
+        window.clearTimeout(resyncTimer);
+        resyncTimer = null;
+    }
+
+    // 轻微 debounce，避免 focus/visibility 事件连发
+    resyncTimer = window.setTimeout(async () => {
+        resyncTimer = null;
+
+        if (!currSessionId.value) return;
+        if (isLoadingMessages.value) return;
+        if (isStreaming.value || isConvRunning.value) return;
+
+        try {
+            await getSessionMsg(currSessionId.value);
+        } catch {
+            // ignore
+        }
+    }, 200);
+}
+
+function handleWindowFocus() {
+    scheduleResyncCurrentSession();
+}
+
+function handleVisibilityChange() {
+    if (!document.hidden) {
+        scheduleResyncCurrentSession();
+    }
+}
+
 // 使用 composables
 const {
     sessions,
@@ -235,7 +197,6 @@ const {
     pendingSessionId,
     editTitleDialog,
     editingTitle,
-    editingSessionId,
     getCurrentSession,
     getSessions,
     newSession,
@@ -265,22 +226,10 @@ const {
 const { isRecording, startRecording: startRec, stopRecording: stopRec } = useRecording();
 
 const {
-    projects,
-    selectedProjectId,
-    getProjects,
-    createProject,
-    updateProject,
-    deleteProject,
-    addSessionToProject,
-    getProjectSessions
-} = useProjects();
-
-const {
     messages,
     isStreaming,
     isConvRunning,
     enableStreaming,
-    currentSessionProject,
     getSessionMessages: getSessionMsg,
     sendMessage: sendMsg,
     toggleStreaming
@@ -292,14 +241,6 @@ const chatInputRef = ref<InstanceType<typeof ChatInput> | null>(null);
 
 // 输入状态
 const prompt = ref('');
-
-// 项目状态
-const projectDialog = ref(false);
-const editingProject = ref<Project | null>(null);
-const projectSessions = ref<any[]>([]);
-const currentProject = computed(() => 
-    projects.value.find(p => p.project_id === selectedProjectId.value)
-);
 
 // 引用消息状态
 interface ReplyInfo {
@@ -344,16 +285,6 @@ function toggleFullscreen() {
 function openImagePreview(imageUrl: string) {
     previewImageUrl.value = imageUrl;
     imagePreviewDialog.value = true;
-}
-
-async function handleSaveTitle() {
-    await saveTitle();
-    
-    // 如果在项目视图中，刷新项目会话列表
-    if (selectedProjectId.value) {
-        const sessions = await getProjectSessions(selectedProjectId.value);
-        projectSessions.value = sessions;
-    }
 }
 
 function handleReplyMessage(msg: any, index: number) {
@@ -409,10 +340,6 @@ function handleReplyWithText(replyData: any) {
 async function handleSelectConversation(sessionIds: string[]) {
     if (!sessionIds[0]) return;
 
-    // 退出项目视图
-    selectedProjectId.value = null;
-    projectSessions.value = [];
-
     // 立即更新选中状态，避免需要点击两次
     currSessionId.value = sessionIds[0];
     selectedSessions.value = [sessionIds[0]];
@@ -449,67 +376,11 @@ function handleNewChat() {
     newChat(closeMobileSidebar);
     messages.value = [];
     clearReply();
-    // 退出项目视图
-    selectedProjectId.value = null;
-    projectSessions.value = [];
 }
 
 async function handleDeleteConversation(sessionId: string) {
     await deleteSessionFn(sessionId);
     messages.value = [];
-    
-    // 如果在项目视图中，刷新项目会话列表
-    if (selectedProjectId.value) {
-        const sessions = await getProjectSessions(selectedProjectId.value);
-        projectSessions.value = sessions;
-    }
-}
-
-async function handleSelectProject(projectId: string) {
-    selectedProjectId.value = projectId;
-    const sessions = await getProjectSessions(projectId);
-    projectSessions.value = sessions;
-    messages.value = [];
-    
-    // 清空当前会话ID，准备在项目中创建新对话
-    currSessionId.value = '';
-    selectedSessions.value = [];
-    
-    // 手机端关闭侧边栏
-    if (isMobile.value) {
-        closeMobileSidebar();
-    }
-}
-
-function showCreateProjectDialog() {
-    editingProject.value = null;
-    projectDialog.value = true;
-}
-
-function showEditProjectDialog(project: Project) {
-    editingProject.value = project;
-    projectDialog.value = true;
-}
-
-async function handleSaveProject(formData: ProjectFormData, projectId?: string) {
-    if (projectId) {
-        await updateProject(
-            projectId,
-            formData.title,
-            formData.emoji,
-            formData.description
-        );
-    } else {
-        await createProject(
-            formData.title,
-            formData.emoji,
-            formData.description
-        );
-    }
-}
-
-async function handleDeleteProject(projectId: string) {
-    await deleteProject(projectId);
 }
 
 async function handleStartRecording() {
@@ -533,22 +404,21 @@ async function handleFileSelect(files: FileList) {
 }
 
 async function handleSendMessage() {
+    if (isLoadingMessages.value) {
+        return;
+    }
+    if (isStreaming.value || isConvRunning.value) {
+        useToast().info(tm('errors.sessionRunning'), { timeout: 3000 });
+        return;
+    }
+
     // 只有引用不能发送，必须有输入内容
     if (!prompt.value.trim() && stagedFiles.value.length === 0 && !stagedAudioUrl.value) {
         return;
     }
 
-    const isCreatingNewSession = !currSessionId.value;
-    const currentProjectId = selectedProjectId.value; // 保存当前项目ID
-    
-    if (isCreatingNewSession) {
+    if (!currSessionId.value) {
         await newSession();
-        
-        // 如果在项目视图中创建新会话，立即退出项目视图
-        if (currentProjectId) {
-            selectedProjectId.value = null;
-            projectSessions.value = [];
-        }
     }
 
     const promptToSend = prompt.value.trim();
@@ -579,15 +449,6 @@ async function handleSendMessage() {
         selectedModelName,
         replyToSend
     );
-
-    // 如果在项目中创建了新会话，将其添加到项目
-    if (isCreatingNewSession && currentProjectId && currSessionId.value) {
-        await addSessionToProject(currSessionId.value, currentProjectId);
-        // 刷新会话列表，移除已添加到项目的会话
-        await getSessions();
-        // 重新获取会话消息以更新项目信息（用于面包屑显示）
-        await getSessionMsg(currSessionId.value);
-    }
 }
 
 // 路由变化监听
@@ -636,12 +497,19 @@ watch(sessions, (newSessions) => {
 onMounted(() => {
     checkMobile();
     window.addEventListener('resize', checkMobile);
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     getSessions();
-    getProjects();
 });
 
 onBeforeUnmount(() => {
     window.removeEventListener('resize', checkMobile);
+    window.removeEventListener('focus', handleWindowFocus);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    if (resyncTimer !== null) {
+        window.clearTimeout(resyncTimer);
+        resyncTimer = null;
+    }
     cleanupMediaCache();
 });
 </script>
@@ -690,7 +558,7 @@ onBeforeUnmount(() => {
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 999;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.2s ease;
 }
 
 .chat-content-panel {
@@ -708,6 +576,7 @@ onBeforeUnmount(() => {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    background-color: rgb(var(--v-theme-surface));
 }
 
 .message-list-fade {
@@ -715,14 +584,16 @@ onBeforeUnmount(() => {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 40px;
-    background: linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+    height: 60px; 
+    background: linear-gradient(
+        to top, 
+        rgb(var(--v-theme-surface)) 0%, 
+        rgba(var(--v-theme-surface), 0) 100%
+    );
+    
     pointer-events: none;
-    z-index: 1;
-}
-
-.message-list-fade.fade-dark {
-    background: linear-gradient(to top, rgba(30, 30, 30, 1) 0%, rgba(30, 30, 30, 0) 100%);
+    z-index: 10; 
+    
 }
 
 .conversation-header {
@@ -752,39 +623,44 @@ onBeforeUnmount(() => {
     margin-left: 8px;
 }
 
-.breadcrumb-container {
-    padding: 8px 16px;
-    border-bottom: 1px solid var(--v-theme-border);
-    flex-shrink: 0;
-}
-
-.breadcrumb-content {
+.welcome-container {
+    height: 100%;
     display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
+    flex-direction: column;
+    position: relative;
 }
 
-.breadcrumb-emoji {
-    font-size: 16px;
+.welcome-title {
+    font-size: 28px;
+    margin-bottom: 16px;
 }
 
-.breadcrumb-project {
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s;
+.loading-overlay-welcome {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.breadcrumb-project:hover {
-    opacity: 0.7;
+.bot-name {
+    font-weight: 700;
+    margin-left: 8px;
+    color: var(--v-theme-secondary);
+    display: inline-flex;
+    align-items: center;
 }
 
-.breadcrumb-separator {
-    opacity: 0.5;
-}
-
-.breadcrumb-session {
-    opacity: 0.7;
+.gradient-star {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffe082, #fdd835, #ff8f00, #ffe082);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    transform: translateY(-1px);
+    animation: gradientShift 4s ease-in-out infinite;
 }
 
 .fade-in {
@@ -809,6 +685,18 @@ onBeforeUnmount(() => {
 
     .conversation-header {
         padding: 2px;
+    }
+}
+
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
     }
 }
 </style>

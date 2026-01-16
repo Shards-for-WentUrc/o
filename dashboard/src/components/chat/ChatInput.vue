@@ -1,21 +1,12 @@
 <template>
     <div class="input-area fade-in">
-        <div class="input-container"
-            :style="{
-                width: '85%',
-                maxWidth: '900px',
-                margin: '0 auto',
-                border: isDark ? 'none' : '1px solid #e0e0e0',
-                borderRadius: '24px',
-                boxShadow: isDark ? 'none' : '0px 2px 2px rgba(0, 0, 0, 0.1)',
-                backgroundColor: isDark ? '#2d2d2d' : 'transparent'
-            }">
+        <div class="input-container" :class="{ 'is-dark': isDark }">
             <!-- 引用预览区 -->
             <transition name="slideReply" @after-leave="handleReplyAfterLeave">
                 <div class="reply-preview" v-if="props.replyTo && !isReplyClosing">
                     <div class="reply-content">
                         <v-icon size="small" class="reply-icon">mdi-reply</v-icon>
-                        "<span class="reply-text">{{ props.replyTo.selectedText }}</span>"
+                        "<span class="reply-text">{{ props.replyTo.selectedText || props.replyTo.messageContent }}</span>"
                     </div>
                     <v-btn @click="handleClearReply" class="remove-reply-btn" icon="mdi-close" size="x-small" color="grey" variant="text" />
                 </div>
@@ -25,66 +16,37 @@
                 v-model="localPrompt" 
                 @keydown="handleKeyDown"
                 :disabled="disabled" 
-                placeholder="Ask AstrBot..."
-                style="width: 100%; resize: none; outline: none; border: 1px solid var(--v-theme-border); border-radius: 12px; padding: 12px 16px; min-height: 40px; font-family: inherit; font-size: 16px; background-color: var(--v-theme-surface);"></textarea>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 14px;">
-                <div style="display: flex; justify-content: flex-start; margin-top: 4px; align-items: center; gap: 8px;">
-                    <!-- Settings Menu -->
-                    <StyledMenu offset="8" location="top start" :close-on-content-click="false">
-                        <template v-slot:activator="{ props: activatorProps }">
-                            <v-btn
-                                v-bind="activatorProps"
-                                icon="mdi-plus"
-                                variant="text"
-                                color="deep-purple"
-                            />
-                        </template>
-                        
-                        <!-- Upload Files -->
-                        <v-list-item 
-                            class="styled-menu-item" 
-                            rounded="md"
-                            @click="triggerImageInput"
-                        >
-                            <template v-slot:prepend>
-                                <v-icon icon="mdi-file-upload-outline" size="small"></v-icon>
-                            </template>
-                            <v-list-item-title>
-                                {{ tm('input.upload') }}
-                            </v-list-item-title>
-                        </v-list-item>
-                        
-                        <!-- Config Selector in Menu -->
-                        <ConfigSelector
-                            :session-id="sessionId || null"
-                            :platform-id="sessionPlatformId"
-                            :is-group="sessionIsGroup"
-                            :initial-config-id="props.configId"
-                            @config-changed="handleConfigChange"
-                        />
-                        
-                        <!-- Streaming Toggle in Menu -->
-                        <v-list-item 
-                            class="styled-menu-item" 
-                            rounded="md"
-                            @click="$emit('toggleStreaming')"
-                        >
-                            <template v-slot:prepend>
-                                <v-icon :icon="enableStreaming ? 'mdi-flash' : 'mdi-flash-off'" size="small"></v-icon>
-                            </template>
-                            <v-list-item-title>
-                                {{ enableStreaming ? tm('streaming.enabled') : tm('streaming.disabled') }}
-                            </v-list-item-title>
-                        </v-list-item>
-                    </StyledMenu>
+                placeholder="Ask Nebula..."
+                class="chat-textarea"
+            ></textarea>
+
+            <div class="input-actions-bar">
+                <div class="left-actions">
+                    <ConfigSelector
+                        :session-id="sessionId || null"
+                        :platform-id="sessionPlatformId"
+                        :is-group="sessionIsGroup"
+                        :initial-config-id="props.configId"
+                        @config-changed="handleConfigChange"
+                    />
                     
-                    <!-- Provider/Model Selector Menu -->
                     <ProviderModelMenu v-if="showProviderSelector" ref="providerModelMenuRef" />
+                    
+                    <v-tooltip :text="enableStreaming ? tm('streaming.enabled') : tm('streaming.disabled')" location="top">
+                        <template v-slot:activator="{ props }">
+                            <v-chip v-bind="props" @click="$emit('toggleStreaming')" size="x-small" class="streaming-toggle-chip">
+                                <v-icon start :icon="enableStreaming ? 'mdi-flash' : 'mdi-flash-off'" size="small"></v-icon>
+                                {{ enableStreaming ? tm('streaming.on') : tm('streaming.off') }}
+                            </v-chip>
+                        </template>
+                    </v-tooltip>
                 </div>
-                <div style="display: flex; justify-content: flex-end; margin-top: 8px; align-items: center;">
+                <div class="right-actions">
                     <input type="file" ref="imageInputRef" @change="handleFileSelect"
                         style="display: none" multiple />
                     <v-progress-circular v-if="disabled" indeterminate size="16" class="mr-1" width="1.5" />
+                    <v-btn @click="triggerImageInput" icon="mdi-plus" variant="text" color="deep-purple"
+                        class="add-btn" size="small" />
                     <v-btn @click="handleRecordClick"
                         :icon="isRecording ? 'mdi-stop-circle' : 'mdi-microphone'" variant="text"
                         :color="isRecording ? 'error' : 'deep-purple'" class="record-btn" size="small" />
@@ -94,7 +56,6 @@
             </div>
         </div>
 
-        <!-- 附件预览区 -->
         <div class="attachments-preview" v-if="stagedImagesUrl.length > 0 || stagedAudioUrl || (stagedFiles && stagedFiles.length > 0)">
             <div v-for="(img, index) in stagedImagesUrl" :key="'img-' + index" class="image-preview">
                 <img :src="img" class="preview-image" />
@@ -129,9 +90,9 @@ import { useModuleI18n } from '@/i18n/composables';
 import { useCustomizerStore } from '@/stores/customizer';
 import ConfigSelector from './ConfigSelector.vue';
 import ProviderModelMenu from './ProviderModelMenu.vue';
-import StyledMenu from '@/components/shared/StyledMenu.vue';
 import type { Session } from '@/composables/useSessions';
 
+// ... (Script 逻辑部分完全保持不变) ...
 interface StagedFileInfo {
     attachment_id: string;
     filename: string;
@@ -143,6 +104,7 @@ interface StagedFileInfo {
 interface ReplyInfo {
     messageId: number;
     selectedText?: string;
+    messageContent?: string;
 }
 
 interface Props {
@@ -219,7 +181,6 @@ function handleReplyAfterLeave() {
 }
 
 function handleKeyDown(e: KeyboardEvent) {
-    // Enter 发送消息
     if (e.keyCode === 13 && !e.shiftKey) {
         e.preventDefault();
         if (canSend.value) {
@@ -227,7 +188,6 @@ function handleKeyDown(e: KeyboardEvent) {
         }
     }
 
-    // Ctrl+B 录音
     if (e.ctrlKey && e.keyCode === 66) {
         e.preventDefault();
         if (ctrlKeyDown.value) return;
@@ -316,10 +276,63 @@ defineExpose({
 <style scoped>
 .input-area {
     padding: 16px;
-    background-color: transparent;
+    padding-top: 0; 
+    background-color: rgb(var(--v-theme-surface));
+    border-top: none;
     position: relative;
-    border-top: 1px solid var(--v-theme-border);
     flex-shrink: 0;
+    z-index: 20;
+}
+
+.input-container {
+    width: 85%;
+    max-width: 900px;
+    margin: 0 auto;
+    border-radius: 24px;
+    background-color: rgb(var(--v-theme-surface));
+    border: 1px solid #e0e0e0;
+    box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.1);
+}
+
+.input-container.is-dark {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0px 2px 2px rgba(226, 226, 226, 0.1);
+}
+
+.chat-textarea {
+    width: 100%;
+    resize: none;
+    outline: none;
+    border: none; 
+    border-radius: 24px 24px 0 0; 
+    padding: 12px 16px;
+    min-height: 40px;
+    font-family: inherit;
+    font-size: 16px;
+    background-color: transparent; 
+    color: rgb(var(--v-theme-on-surface));
+}
+
+.input-actions-bar {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 6px 14px;
+}
+
+.left-actions {
+    display: flex; 
+    justify-content: flex-start; 
+    margin-top: 4px; 
+    align-items: center; 
+    gap: 8px;
+}
+
+.right-actions {
+    display: flex; 
+    justify-content: flex-end; 
+    margin-top: 8px; 
+    align-items: center;
 }
 
 .reply-preview {
@@ -328,7 +341,7 @@ defineExpose({
     justify-content: space-between;
     padding: 8px 16px;
     margin: 8px 8px 0 8px;
-    background-color: rgba(103, 58, 183, 0.06);
+    background-color: rgba(var(--v-theme-primary), 0.08); 
     border-radius: 12px;
     gap: 8px;
     max-height: 500px;
@@ -388,13 +401,13 @@ defineExpose({
 }
 
 .reply-icon {
-    color: var(--v-theme-secondary);
+    color: rgb(var(--v-theme-secondary));
     flex-shrink: 0;
 }
 
 .reply-text {
     font-size: 13px;
-    color: var(--v-theme-secondaryText);
+    color: rgba(var(--v-theme-on-surface), 0.7);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -456,8 +469,17 @@ defineExpose({
     opacity: 1;
 }
 
+.streaming-toggle-chip {
+    cursor: pointer;
+    user-select: none;
+}
+
+.streaming-toggle-chip:hover {
+    opacity: 0.8;
+}
+
 .fade-in {
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 0.2s ease-in-out;
 }
 
 @keyframes fadeIn {
@@ -479,6 +501,11 @@ defineExpose({
     .input-container {
         width: 100% !important;
         max-width: 100% !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
     }
 }
 </style>
