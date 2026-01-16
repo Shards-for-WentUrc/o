@@ -1,4 +1,4 @@
-import { createApp, type Plugin } from 'vue';
+import { createApp, watch, type Plugin } from 'vue';
 import { createPinia } from 'pinia';
 import App from './App.vue';
 import { router } from './router';
@@ -8,9 +8,35 @@ import { setupI18n } from './i18n/composables';
 import '@/scss/style.scss';
 import VueApexCharts from 'vue3-apexcharts';
 
+import githubHljsCssUrl from 'highlight.js/styles/github.css?url';
+import githubDarkHljsCssUrl from 'highlight.js/styles/github-dark.css?url';
+
 import print from 'vue3-print-nb';
 import { loader } from '@guolao/vue-monaco-editor'
 import axios from 'axios';
+
+function applyHljsTheme(isDark: boolean) {
+  if (typeof document === 'undefined') return;
+
+  const id = 'hljs-theme';
+  const href = isDark ? githubDarkHljsCssUrl : githubHljsCssUrl;
+
+  let link = document.getElementById(id) as HTMLLinkElement | null;
+  if (!link) {
+    link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }
+
+  if (link.href !== href) link.href = href;
+}
+
+watch(
+  () => vuetify.theme.global.current.value.dark,
+  (isDark) => applyHljsTheme(isDark),
+  { immediate: true },
+);
 
 // 初始化新的i18n系统，等待完成后再挂载应用
 setupI18n().then(() => {

@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import { useI18n } from '@/i18n/composables';
+import { MarkdownRender, enableKatex, enableMermaid } from 'markstream-vue';
+import 'markstream-vue/index.css';
+import 'katex/dist/katex.min.css';
 import axios from 'axios';
-import MarkdownContent from '@/components/shared/MarkdownContent.vue';
+import { useTheme } from 'vuetify';
+
+enableKatex();
+enableMermaid();
 
 const { t } = useI18n();
+
+const theme = useTheme();
+const isDark = computed(() => theme.global.current.value.dark);
 
 const props = defineProps({
   modelValue: {
@@ -182,7 +191,7 @@ getCurrentVersion();
             {{ changelogError }}
           </v-alert>
           <div v-else-if="changelogContent" class="changelog-content">
-            <MarkdownContent :content="changelogContent" :typewriter="false" />
+            <MarkdownRender :content="changelogContent" :typewriter="false" class="markdown-content" :class="{ dark: isDark }" />
           </div>
         </div>
       </v-card-text>

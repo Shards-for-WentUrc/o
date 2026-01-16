@@ -1,6 +1,15 @@
 <template>
     <div class="input-area fade-in">
-        <div class="input-container" :class="{ 'is-dark': isDark }">
+        <div class="input-container"
+            :style="{
+                width: '85%',
+                maxWidth: '900px',
+                margin: '0 auto',
+                border: isDark ? 'none' : '1px solid #e0e0e0',
+                borderRadius: '24px',
+                boxShadow: isDark ? 'none' : '0px 2px 2px rgba(0, 0, 0, 0.1)',
+                backgroundColor: isDark ? '#2d2d2d' : 'transparent'
+            }">
             <!-- 引用预览区 -->
             <transition name="slideReply" @after-leave="handleReplyAfterLeave">
                 <div class="reply-preview" v-if="props.replyTo && !isReplyClosing">
@@ -11,42 +20,71 @@
                     <v-btn @click="handleClearReply" class="remove-reply-btn" icon="mdi-close" size="x-small" color="grey" variant="text" />
                 </div>
             </transition>
-            <textarea 
+            <textarea
                 ref="inputField"
-                v-model="localPrompt" 
+                v-model="localPrompt"
                 @keydown="handleKeyDown"
-                :disabled="disabled" 
+                :disabled="disabled"
                 placeholder="Ask Nebula..."
-                class="chat-textarea"
-            ></textarea>
-
-            <div class="input-actions-bar">
-                <div class="left-actions">
-                    <ConfigSelector
-                        :session-id="sessionId || null"
-                        :platform-id="sessionPlatformId"
-                        :is-group="sessionIsGroup"
-                        :initial-config-id="props.configId"
-                        @config-changed="handleConfigChange"
-                    />
-                    
-                    <ProviderModelMenu v-if="showProviderSelector" ref="providerModelMenuRef" />
-                    
-                    <v-tooltip :text="enableStreaming ? tm('streaming.enabled') : tm('streaming.disabled')" location="top">
-                        <template v-slot:activator="{ props }">
-                            <v-chip v-bind="props" @click="$emit('toggleStreaming')" size="x-small" class="streaming-toggle-chip">
-                                <v-icon start :icon="enableStreaming ? 'mdi-flash' : 'mdi-flash-off'" size="small"></v-icon>
-                                {{ enableStreaming ? tm('streaming.on') : tm('streaming.off') }}
-                            </v-chip>
+                style="width: 100%; resize: none; outline: none; border: 1px solid var(--v-theme-border); border-radius: 12px; padding: 12px 16px; min-height: 40px; font-family: inherit; font-size: 16px; background-color: var(--v-theme-surface);"></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 14px;">
+                <div style="display: flex; justify-content: flex-start; margin-top: 4px; align-items: center; gap: 8px;">
+                    <!-- Settings Menu -->
+                    <StyledMenu offset="8" location="top start" :close-on-content-click="false">
+                        <template v-slot:activator="{ props: activatorProps }">
+                            <v-btn
+                                v-bind="activatorProps"
+                                icon="mdi-plus"
+                                variant="text"
+                                color="deep-purple"
+                            />
                         </template>
-                    </v-tooltip>
+                        
+                        <!-- Upload Files -->
+                        <v-list-item 
+                            class="styled-menu-item" 
+                            rounded="md"
+                            @click="triggerImageInput"
+                        >
+                            <template v-slot:prepend>
+                                <v-icon icon="mdi-file-upload-outline" size="small"></v-icon>
+                            </template>
+                            <v-list-item-title>
+                                {{ tm('input.upload') }}
+                            </v-list-item-title>
+                        </v-list-item>
+                        
+                        <!-- Config Selector in Menu -->
+                        <ConfigSelector
+                            :session-id="sessionId || null"
+                            :platform-id="sessionPlatformId"
+                            :is-group="sessionIsGroup"
+                            :initial-config-id="props.configId"
+                            @config-changed="handleConfigChange"
+                        />
+                        
+                        <!-- Streaming Toggle in Menu -->
+                        <v-list-item 
+                            class="styled-menu-item" 
+                            rounded="md"
+                            @click="$emit('toggleStreaming')"
+                        >
+                            <template v-slot:prepend>
+                                <v-icon :icon="enableStreaming ? 'mdi-flash' : 'mdi-flash-off'" size="small"></v-icon>
+                            </template>
+                            <v-list-item-title>
+                                {{ enableStreaming ? tm('streaming.enabled') : tm('streaming.disabled') }}
+                            </v-list-item-title>
+                        </v-list-item>
+                    </StyledMenu>
+                    
+                    <!-- Provider/Model Selector Menu -->
+                    <ProviderModelMenu v-if="showProviderSelector" ref="providerModelMenuRef" />
                 </div>
-                <div class="right-actions">
+                <div style="display: flex; justify-content: flex-end; margin-top: 8px; align-items: center;">
                     <input type="file" ref="imageInputRef" @change="handleFileSelect"
                         style="display: none" multiple />
                     <v-progress-circular v-if="disabled" indeterminate size="16" class="mr-1" width="1.5" />
-                    <v-btn @click="triggerImageInput" icon="mdi-plus" variant="text" color="deep-purple"
-                        class="add-btn" size="small" />
                     <v-btn @click="handleRecordClick"
                         :icon="isRecording ? 'mdi-stop-circle' : 'mdi-microphone'" variant="text"
                         :color="isRecording ? 'error' : 'deep-purple'" class="record-btn" size="small" />
@@ -90,6 +128,7 @@ import { useModuleI18n } from '@/i18n/composables';
 import { useCustomizerStore } from '@/stores/customizer';
 import ConfigSelector from './ConfigSelector.vue';
 import ProviderModelMenu from './ProviderModelMenu.vue';
+import StyledMenu from '@/components/shared/StyledMenu.vue';
 import type { Session } from '@/composables/useSessions';
 
 // ... (Script 逻辑部分完全保持不变) ...
@@ -285,54 +324,7 @@ defineExpose({
 }
 
 .input-container {
-    width: 85%;
-    max-width: 900px;
-    margin: 0 auto;
     border-radius: 24px;
-    background-color: rgb(var(--v-theme-surface));
-    border: 1px solid #e0e0e0;
-    box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.1);
-}
-
-.input-container.is-dark {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0px 2px 2px rgba(226, 226, 226, 0.1);
-}
-
-.chat-textarea {
-    width: 100%;
-    resize: none;
-    outline: none;
-    border: none; 
-    border-radius: 24px 24px 0 0; 
-    padding: 12px 16px;
-    min-height: 40px;
-    font-family: inherit;
-    font-size: 16px;
-    background-color: transparent; 
-    color: rgb(var(--v-theme-on-surface));
-}
-
-.input-actions-bar {
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    padding: 6px 14px;
-}
-
-.left-actions {
-    display: flex; 
-    justify-content: flex-start; 
-    margin-top: 4px; 
-    align-items: center; 
-    gap: 8px;
-}
-
-.right-actions {
-    display: flex; 
-    justify-content: flex-end; 
-    margin-top: 8px; 
-    align-items: center;
 }
 
 .reply-preview {
@@ -467,15 +459,6 @@ defineExpose({
 
 .remove-attachment-btn:hover {
     opacity: 1;
-}
-
-.streaming-toggle-chip {
-    cursor: pointer;
-    user-select: none;
-}
-
-.streaming-toggle-chip:hover {
-    opacity: 0.8;
 }
 
 .fade-in {

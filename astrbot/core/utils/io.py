@@ -328,7 +328,7 @@ async def download_nebula_dashboard_nightly(
 ) -> None:
     """下载 Nebula nightly WebUI(dist.zip) 并解压到 data/dist。
 
-    下载源：LandfillLand/Nebula release tag `nightly` 的 dist.zip。
+    下载源：Neo-Life/Nebula release tag `nightly` 的 dist.zip。
     """
 
     if path is None:
@@ -336,7 +336,7 @@ async def download_nebula_dashboard_nightly(
     else:
         zip_path = Path(path).absolute()
 
-    url = "https://github.com/LandfillLand/Nebula/releases/download/nightly/dist.zip"
+    url = "https://github.com/Neo-Life/Nebula/releases/download/nightly/dist.zip"
     if proxy:
         proxy = proxy.removesuffix("/")
         url = f"{proxy}/{url}"

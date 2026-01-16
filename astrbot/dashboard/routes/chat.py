@@ -297,6 +297,8 @@ class ChatRoute(Route):
         # 构建用户消息段（包含 path 用于传递给 adapter）
         message_parts = await self._build_user_message_parts(message)
 
+        message_id = str(uuid.uuid4())
+
         async def stream():
             client_disconnected = False
             accumulated_parts = []
@@ -322,6 +324,13 @@ class ChatRoute(Route):
                             continue
 
                         if not result:
+                            continue
+
+                        if (
+                            "message_id" in result
+                            and result["message_id"] != message_id
+                        ):
+                            logger.warning("webchat stream message_id mismatch")
                             continue
 
                         result_text = result["data"]
@@ -466,6 +475,7 @@ class ChatRoute(Route):
                     "selected_model": selected_model,
                     "enable_streaming": enable_streaming,
                     "stream_id": stream_id,
+                    "message_id": message_id,
                 },
             ),
         )
@@ -629,9 +639,17 @@ class ChatRoute(Route):
             page_size=100,  # 暂时返回前100个
         )
 
-        # 转换为字典格式，并添加额外信息
+        # 转换为字典格式，并添加项目信息
+        # get_platform_sessions_by_creator 现在返回 list[dict] 包含 session 和项目字段
         sessions_data = []
-        for session in sessions:
+        for item in sessions:
+            session = item["session"]
+            project_id = item["project_id"]
+
+            # 跳过属于项目的会话（在侧边栏对话列表中不显示）
+            if project_id is not None:
+                continue
+
             sessions_data.append(
                 {
                     "session_id": session.session_id,
@@ -656,6 +674,12 @@ class ChatRoute(Route):
         session = await self.db.get_platform_session_by_id(session_id)
         platform_id = session.platform_id if session else "webchat"
 
+        # 获取项目信息（如果会话属于某个项目）
+        username = g.get("username", "guest")
+        project_info = await self.db.get_project_by_session(
+            session_id=session_id, creator=username
+        )
+
         # Get platform message history using session_id
         history_ls = await self.platform_history_mgr.get(
             platform_id=platform_id,
@@ -666,16 +690,20 @@ class ChatRoute(Route):
 
         history_res = [history.model_dump() for history in history_ls]
 
-        return (
-            Response()
-            .ok(
-                data={
-                    "history": history_res,
-                    "is_running": self.running_convs.get(session_id, False),
-                },
-            )
-            .__dict__
-        )
+        response_data = {
+            "history": history_res,
+            "is_running": self.running_convs.get(session_id, False),
+        }
+
+        # 如果会话属于项目，添加项目信息
+        if project_info:
+            response_data["project"] = {
+                "project_id": project_info.project_id,
+                "title": project_info.title,
+                "emoji": project_info.emoji,
+            }
+
+        return Response().ok(data=response_data).__dict__
 
     async def update_session_display_name(self):
         """Update a Platform session's display name."""

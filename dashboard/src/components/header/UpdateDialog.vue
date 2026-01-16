@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import axios from 'axios'
-import MarkdownContent from '@/components/shared/MarkdownContent.vue'
+import { MarkdownRender, enableKatex, enableMermaid } from 'markstream-vue'
+import 'markstream-vue/index.css'
+import 'katex/dist/katex.min.css'
 import { useI18n } from '@/i18n/composables'
 import { useAuthStore } from '@/stores/auth'
-import { useDisplay } from 'vuetify'
+import { useDisplay, useTheme } from 'vuetify'
 
 type UpdateChannel = 'official' | 'nebula'
 
@@ -26,9 +28,15 @@ const emit = defineEmits<{
   (e: 'updateFlags', value: UpdateFlags): void
 }>()
 
+enableKatex()
+enableMermaid()
+
 const { t } = useI18n()
 
 const display = useDisplay()
+
+const theme = useTheme()
+const isDark = computed(() => theme.global.current.value.dark)
 
 // 高度过低时使用手机布局（即使是宽屏也切到“无侧栏”布局）
 const isPhoneLayout = computed(() => display.xs.value || display.height.value < 720)
@@ -416,7 +424,7 @@ const dialogModel = computed({
                     rounded="lg"
                   >
                     <div style="max-height: 200px; overflow-y: auto" class="text-body-2">
-                      <MarkdownContent :content="releaseMessage" :typewriter="false" />
+                      <MarkdownRender :content="releaseMessage" :typewriter="false" class="markdown-content" :class="{ dark: isDark }" />
                     </div>
                   </v-alert>
 
@@ -649,7 +657,7 @@ const dialogModel = computed({
       </v-card-title>
       <v-divider />
       <v-card-text class="pa-6" style="font-size: 16px; max-height: 500px; overflow-y: auto; line-height: 1.6">
-        <MarkdownContent :content="releaseNotesContent" :typewriter="false" />
+        <MarkdownRender :content="releaseNotesContent" :typewriter="false" class="markdown-content" :class="{ dark: isDark }" />
       </v-card-text>
     </v-card>
   </v-dialog>

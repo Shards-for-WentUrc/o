@@ -21,6 +21,7 @@ class WebChatMessageEvent(AstrMessageEvent):
 
     @staticmethod
     async def _send(
+        message_id: str,
         message: MessageChain | None,
         session_id: str,
         streaming: bool = False,
@@ -35,6 +36,7 @@ class WebChatMessageEvent(AstrMessageEvent):
                     "type": "end",
                     "data": "",
                     "streaming": False,
+                    "message_id": message_id,
                 },  # end means this request is finished
             )
             return
@@ -49,6 +51,7 @@ class WebChatMessageEvent(AstrMessageEvent):
                         "data": data,
                         "streaming": streaming,
                         "chain_type": message.type,
+                        "message_id": message_id,
                     },
                 )
             elif isinstance(comp, Json):
@@ -58,6 +61,7 @@ class WebChatMessageEvent(AstrMessageEvent):
                         "data": json.dumps(comp.data, ensure_ascii=False),
                         "streaming": streaming,
                         "chain_type": message.type,
+                        "message_id": message_id,
                     },
                 )
             elif isinstance(comp, Image):
@@ -73,6 +77,7 @@ class WebChatMessageEvent(AstrMessageEvent):
                         "type": "image",
                         "data": data,
                         "streaming": streaming,
+                        "message_id": message_id,
                     },
                 )
             elif isinstance(comp, Record):
@@ -88,6 +93,7 @@ class WebChatMessageEvent(AstrMessageEvent):
                         "type": "record",
                         "data": data,
                         "streaming": streaming,
+                        "message_id": message_id,
                     },
                 )
             elif isinstance(comp, File):
@@ -98,12 +104,13 @@ class WebChatMessageEvent(AstrMessageEvent):
                 filename = f"{uuid.uuid4()!s}{ext}"
                 dest_path = os.path.join(imgs_dir, filename)
                 shutil.copy2(file_path, dest_path)
-                data = f"[FILE]{filename}|{original_name}"
+                data = f"[FILE]{filename}"
                 await web_chat_back_queue.put(
                     {
                         "type": "file",
                         "data": data,
                         "streaming": streaming,
+                        "message_id": message_id,
                     },
                 )
             else:
@@ -112,8 +119,10 @@ class WebChatMessageEvent(AstrMessageEvent):
         return data
 
     async def send(self, message: MessageChain | None):
+        message_id = self.message_obj.message_id
         await WebChatMessageEvent._send(
-            message,
+            message_id=message_id,
+            message=message,
             session_id=self.session_id,
             stream_id=self.get_extra("stream_id"),
         )
@@ -125,6 +134,7 @@ class WebChatMessageEvent(AstrMessageEvent):
         cid = self.session_id.split("!")[-1]
         queue_key = self.get_extra("stream_id") or cid
         web_chat_back_queue = webchat_queue_mgr.get_or_create_back_queue(queue_key)
+        message_id = self.message_obj.message_id
         async for chain in generator:
             # if chain.type == "break" and final_data:
             #     # 分割符
@@ -139,7 +149,8 @@ class WebChatMessageEvent(AstrMessageEvent):
             #     continue
 
             r = await WebChatMessageEvent._send(
-                chain,
+                message_id=message_id,
+                message=chain,
                 session_id=self.session_id,
                 streaming=True,
                 stream_id=self.get_extra("stream_id"),
@@ -157,6 +168,7 @@ class WebChatMessageEvent(AstrMessageEvent):
                 "data": final_data,
                 "reasoning": reasoning_content,
                 "streaming": True,
+                "message_id": message_id,
             },
         )
         await super().send_streaming(generator, use_fallback)

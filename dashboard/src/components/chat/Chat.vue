@@ -9,10 +9,12 @@
                     :sessions="sessions"
                     :selectedSessions="selectedSessions"
                     :currSessionId="currSessionId"
+                    :selectedProjectId="selectedProjectId"
                     :isDark="isDark"
                     :chatboxMode="chatboxMode"
                     :isMobile="isMobile"
                     :mobileMenuOpen="mobileMenuOpen"
+                    :projects="projects"
                     @newChat="handleNewChat"
                     @selectConversation="handleSelectConversation"
                     @editTitle="showEditTitleDialog"
@@ -20,6 +22,10 @@
                     @closeMobileSidebar="closeMobileSidebar"
                     @toggleTheme="toggleTheme"
                     @toggleFullscreen="toggleFullscreen"
+                    @selectProject="handleSelectProject"
+                    @createProject="showCreateProjectDialog"
+                    @editProject="showEditProjectDialog"
+                    @deleteProject="handleDeleteProject"
                 />
 
                 <!-- 右侧聊天内容区域 -->
@@ -32,7 +38,17 @@
                         </v-btn>
                     </div>
 
-                    <div class="message-list-wrapper" v-if="messages && messages.length > 0">
+                    <!-- 面包屑导航 -->
+                    <div v-if="currentSessionProject && messages && messages.length > 0" class="breadcrumb-container">
+                        <div class="breadcrumb-content">
+                            <span class="breadcrumb-emoji">{{ currentSessionProject.emoji || '📁' }}</span>
+                            <span class="breadcrumb-project" @click="handleSelectProject(currentSessionProject.project_id)">{{ currentSessionProject.title }}</span>
+                            <v-icon size="small" class="breadcrumb-separator">mdi-chevron-right</v-icon>
+                            <span class="breadcrumb-session">{{ getCurrentSession?.display_name || tm('conversation.newConversation') }}</span>
+                        </div>
+                    </div>
+
+                    <div class="message-list-wrapper" v-if="!selectedProjectId && messages && messages.length > 0">
                         <MessageList :messages="messages" :isDark="isDark"
                             :isStreaming="isStreaming || isConvRunning" 
                             :isLoadingMessages="isLoadingMessages"
@@ -42,23 +58,19 @@
                             ref="messageList" />
                         <div class="message-list-fade" :class="{ 'fade-dark': isDark }"></div>
                     </div>
-                    <div class="welcome-container fade-in" v-else>
-                        <div v-if="isLoadingMessages" class="loading-overlay-welcome">
-                            <v-progress-circular
-                                indeterminate
-                                size="48"
-                                width="4"
-                                color="primary"
-                            ></v-progress-circular>
-                        </div>
-                        <div v-else class="welcome-title">
-                            <span>Hello, I'm</span>
-                            <span class="bot-name">
-                                Nebula
-                                <v-icon size="small" class="ml-2 gradient-star">mdi-star-four-points</v-icon>
-                            </span>
-                        </div>
-                    </div>
+                    <ProjectView
+                        v-else-if="selectedProjectId"
+                        :project="currentProject"
+                        :sessions="projectSessions"
+                        @selectSession="(sessionId) => handleSelectConversation([sessionId])"
+                        @editSessionTitle="showEditTitleDialog"
+                        @deleteSession="handleDeleteConversation"
+                    />
+                    <WelcomeView
+                        v-else
+                        :isLoading="isLoadingMessages"
+                        bot-name="Nebula"
+                    />
 
                     <!-- 输入区域 -->
                     <ChatInput
@@ -95,12 +107,12 @@
             <v-card-title class="dialog-title">{{ tm('actions.editTitle') }}</v-card-title>
             <v-card-text>
                 <v-text-field v-model="editingTitle" :label="tm('conversation.newConversation')" variant="outlined"
-                    hide-details class="mt-2" @keyup.enter="saveTitle" autofocus />
+                    hide-details class="mt-2" @keyup.enter="handleSaveTitle" autofocus />
             </v-card-text>
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn variant="text" @click="editTitleDialog = false" color="grey-darken-1">{{ t('core.common.cancel') }}</v-btn>
-                <v-btn variant="text" @click="saveTitle" color="primary">{{ t('core.common.save') }}</v-btn>
+                <v-btn variant="text" @click="handleSaveTitle" color="primary">{{ t('core.common.save') }}</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -117,6 +129,13 @@
             </v-card-text>
         </v-card>
     </v-dialog>
+
+    <!-- 创建/编辑项目对话框 -->
+    <ProjectDialog
+        v-model="projectDialog"
+        :project="editingProject"
+        @save="handleSaveProject"
+    />
 </template>
 
 <script setup lang="ts">
@@ -129,10 +148,16 @@ import { useTheme } from 'vuetify';
 import MessageList from '@/components/chat/MessageList.vue';
 import ConversationSidebar from '@/components/chat/ConversationSidebar.vue';
 import ChatInput from '@/components/chat/ChatInput.vue';
+import ProjectDialog from '@/components/chat/ProjectDialog.vue';
+import ProjectView from '@/components/chat/ProjectView.vue';
+import WelcomeView from '@/components/chat/WelcomeView.vue';
+import type { ProjectFormData } from '@/components/chat/ProjectDialog.vue';
+import type { Project } from '@/components/chat/ProjectList.vue';
 import { useSessions } from '@/composables/useSessions';
 import { useMessages } from '@/composables/useMessages';
 import { useMediaHandling } from '@/composables/useMediaHandling';
 import { useRecording } from '@/composables/useRecording';
+import { useProjects } from '@/composables/useProjects';
 
 interface Props {
     chatboxMode?: boolean;
@@ -226,10 +251,22 @@ const {
 const { isRecording, startRecording: startRec, stopRecording: stopRec } = useRecording();
 
 const {
+    projects,
+    selectedProjectId,
+    getProjects,
+    createProject,
+    updateProject,
+    deleteProject,
+    addSessionToProject,
+    getProjectSessions
+} = useProjects();
+
+const {
     messages,
     isStreaming,
     isConvRunning,
     enableStreaming,
+    currentSessionProject,
     getSessionMessages: getSessionMsg,
     sendMessage: sendMsg,
     toggleStreaming
@@ -241,6 +278,14 @@ const chatInputRef = ref<InstanceType<typeof ChatInput> | null>(null);
 
 // 输入状态
 const prompt = ref('');
+
+// 项目状态
+const projectDialog = ref(false);
+const editingProject = ref<Project | null>(null);
+const projectSessions = ref<any[]>([]);
+const currentProject = computed(() =>
+    projects.value.find(p => p.project_id === selectedProjectId.value)
+);
 
 // 引用消息状态
 interface ReplyInfo {
@@ -285,6 +330,16 @@ function toggleFullscreen() {
 function openImagePreview(imageUrl: string) {
     previewImageUrl.value = imageUrl;
     imagePreviewDialog.value = true;
+}
+
+async function handleSaveTitle() {
+    await saveTitle();
+
+    // 如果在项目视图中，刷新项目会话列表
+    if (selectedProjectId.value) {
+        const sessions = await getProjectSessions(selectedProjectId.value);
+        projectSessions.value = sessions;
+    }
 }
 
 function handleReplyMessage(msg: any, index: number) {
@@ -340,6 +395,10 @@ function handleReplyWithText(replyData: any) {
 async function handleSelectConversation(sessionIds: string[]) {
     if (!sessionIds[0]) return;
 
+    // 退出项目视图
+    selectedProjectId.value = null;
+    projectSessions.value = [];
+
     // 立即更新选中状态，避免需要点击两次
     currSessionId.value = sessionIds[0];
     selectedSessions.value = [sessionIds[0]];
@@ -376,11 +435,67 @@ function handleNewChat() {
     newChat(closeMobileSidebar);
     messages.value = [];
     clearReply();
+    // 退出项目视图
+    selectedProjectId.value = null;
+    projectSessions.value = [];
 }
 
 async function handleDeleteConversation(sessionId: string) {
     await deleteSessionFn(sessionId);
     messages.value = [];
+
+    // 如果在项目视图中，刷新项目会话列表
+    if (selectedProjectId.value) {
+        const sessions = await getProjectSessions(selectedProjectId.value);
+        projectSessions.value = sessions;
+    }
+}
+
+async function handleSelectProject(projectId: string) {
+    selectedProjectId.value = projectId;
+    const sessions = await getProjectSessions(projectId);
+    projectSessions.value = sessions;
+    messages.value = [];
+
+    // 清空当前会话ID，准备在项目中创建新对话
+    currSessionId.value = '';
+    selectedSessions.value = [];
+
+    // 手机端关闭侧边栏
+    if (isMobile.value) {
+        closeMobileSidebar();
+    }
+}
+
+function showCreateProjectDialog() {
+    editingProject.value = null;
+    projectDialog.value = true;
+}
+
+function showEditProjectDialog(project: Project) {
+    editingProject.value = project;
+    projectDialog.value = true;
+}
+
+async function handleSaveProject(formData: ProjectFormData, projectId?: string) {
+    if (projectId) {
+        await updateProject(
+            projectId,
+            formData.title,
+            formData.emoji,
+            formData.description
+        );
+    } else {
+        await createProject(
+            formData.title,
+            formData.emoji,
+            formData.description
+        );
+    }
+}
+
+async function handleDeleteProject(projectId: string) {
+    await deleteProject(projectId);
 }
 
 async function handleStartRecording() {
@@ -417,8 +532,17 @@ async function handleSendMessage() {
         return;
     }
 
-    if (!currSessionId.value) {
+    const isCreatingNewSession = !currSessionId.value;
+    const currentProjectId = selectedProjectId.value;
+
+    if (isCreatingNewSession) {
         await newSession();
+
+        // 如果在项目视图中创建新会话，立即退出项目视图
+        if (currentProjectId) {
+            selectedProjectId.value = null;
+            projectSessions.value = [];
+        }
     }
 
     const promptToSend = prompt.value.trim();
@@ -449,6 +573,15 @@ async function handleSendMessage() {
         selectedModelName,
         replyToSend
     );
+
+    // 如果在项目中创建了新会话，将其添加到项目
+    if (isCreatingNewSession && currentProjectId && currSessionId.value) {
+        await addSessionToProject(currSessionId.value, currentProjectId);
+        // 刷新会话列表，移除已添加到项目的会话
+        await getSessions();
+        // 重新获取会话消息以更新项目信息（用于面包屑显示）
+        await getSessionMsg(currSessionId.value);
+    }
 }
 
 // 路由变化监听
@@ -500,6 +633,7 @@ onMounted(() => {
     window.addEventListener('focus', handleWindowFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     getSessions();
+    getProjects();
 });
 
 onBeforeUnmount(() => {
@@ -623,44 +757,35 @@ onBeforeUnmount(() => {
     margin-left: 8px;
 }
 
-.welcome-container {
-    height: 100%;
+.breadcrumb-container {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--v-theme-border);
+    flex-shrink: 0;
+}
+
+.breadcrumb-content {
     display: flex;
-    justify-content: center;
     align-items: center;
-    flex-direction: column;
-    position: relative;
+    gap: 8px;
+    font-size: 14px;
 }
 
-.welcome-title {
-    font-size: 28px;
-    margin-bottom: 16px;
+.breadcrumb-emoji {
+    font-size: 16px;
 }
 
-.loading-overlay-welcome {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.breadcrumb-project {
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
 }
 
-.bot-name {
-    font-weight: 700;
-    margin-left: 8px;
-    color: var(--v-theme-secondary);
-    display: inline-flex;
-    align-items: center;
+.breadcrumb-project:hover {
+    opacity: 0.7;
 }
 
-.gradient-star {
-    display: inline-block;
-    background: linear-gradient(135deg, #ffe082, #fdd835, #ff8f00, #ffe082);
-    background-size: 200% 200%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    -webkit-text-fill-color: transparent;
-    transform: translateY(-1px);
-    animation: gradientShift 4s ease-in-out infinite;
+.breadcrumb-session {
+    color: var(--v-theme-secondaryText);
 }
 
 .fade-in {
@@ -688,15 +813,4 @@ onBeforeUnmount(() => {
     }
 }
 
-@keyframes gradientShift {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
-}
 </style>

@@ -112,7 +112,17 @@ export default defineConfig(() => {
       }
     },
     optimizeDeps: {
-      exclude: ['vuetify'],
+      exclude: [
+        'vuetify',
+        'stream-monaco',
+        '@guolao/vue-monaco-editor',
+        'monaco-editor',
+        'monaco-editor/esm/vs/editor/editor.worker',
+        'monaco-editor/esm/vs/language/json/json.worker',
+        'monaco-editor/esm/vs/language/css/css.worker',
+        'monaco-editor/esm/vs/language/html/html.worker',
+        'monaco-editor/esm/vs/language/typescript/ts.worker'
+      ],
       entries: ['./src/**/*.vue']
     },
     server: {

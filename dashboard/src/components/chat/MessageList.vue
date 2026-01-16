@@ -101,80 +101,91 @@
                                         <span class="reasoning-label">{{ tm('reasoning.thinking') }}</span>
                                     </div>
                                     <div v-if="isReasoningExpanded(index)" class="reasoning-content">
-                                        <MarkdownContent :content="msg.content.reasoning"
-                                            class="reasoning-text" :typewriter="false" :preprocess-badges="false"
-                                            :style="isDark ? { opacity: '0.85' } : {}" :is-dark="isDark" />
+                                        <MarkdownRender :content="msg.content.reasoning"
+                                            class="reasoning-text markdown-content" :typewriter="false"
+                                            :class="{ dark: isDark }"
+                                            :style="isDark ? { opacity: '0.85' } : {}" />
                                     </div>
                                 </div>
 
                                 <!-- 遍历 message parts (保持顺序) -->
                                 <template v-for="(part, partIndex) in msg.content.message" :key="partIndex">
                                     <!-- Tool Calls Block -->
-                                    <div v-if="part.type === 'tool_call' && part.tool_calls && part.tool_calls.length > 0"
-                                        class="tool-calls-container">
-                                        <div class="tool-calls-label">{{ tm('actions.toolsUsed') }}</div>
-                                        <div v-for="(toolCall, tcIndex) in part.tool_calls" :key="toolCall.id"
-                                            class="tool-call-card" :class="{ 'is-dark': isDark, 'expanded': isToolCallExpanded(index, partIndex, tcIndex) }" :style="isDark ? {
-                                                backgroundColor: 'rgba(40, 60, 100, 0.4)',
-                                                borderColor: 'rgba(100, 140, 200, 0.4)'
-                                            } : {}">
-                                            <div class="tool-call-header" :class="{ 'is-dark': isDark }"
-                                                @click="toggleToolCall(index, partIndex, tcIndex)">
-                                                <v-icon size="small" class="tool-call-expand-icon">
-                                                    {{ isToolCallExpanded(index, partIndex, tcIndex) ?
-                                                        'mdi-chevron-down' : 'mdi-chevron-right' }}
-                                                </v-icon>
-                                                <v-icon size="small" class="tool-call-icon">mdi-wrench-outline</v-icon>
-                                                <div class="tool-call-info">
-                                                    <span class="tool-call-name">{{ toolCall.name }}</span>
-                                                </div>
-                                                <span class="tool-call-status"
-                                                    :class="{ 'status-running': !toolCall.finished_ts, 'status-finished': toolCall.finished_ts }">
-                                                    <template v-if="toolCall.finished_ts">
-                                                        <v-icon size="x-small"
-                                                            class="status-icon">mdi-check-circle</v-icon>
-                                                        {{ formatDuration(toolCall.finished_ts - toolCall.ts) }}
-                                                    </template>
-                                                    <template v-else>
-                                                        <v-icon size="x-small"
-                                                            class="status-icon spinning">mdi-loading</v-icon>
-                                                        {{ getElapsedTime(toolCall.ts) }}
-                                                    </template>
-                                                </span>
-                                            </div>
-                                            <div v-if="isToolCallExpanded(index, partIndex, tcIndex)"
-                                                class="tool-call-details" :style="isDark ? {
-                                                    borderTopColor: 'rgba(100, 140, 200, 0.3)',
-                                                    backgroundColor: 'rgba(30, 45, 70, 0.5)'
+                                    <template v-if="part.type === 'tool_call' && part.tool_calls && part.tool_calls.length > 0">
+                                        <template v-for="(toolCall, tcIndex) in part.tool_calls" :key="toolCall.id">
+                                            <IPythonToolBlock
+                                                v-if="isIPythonTool(toolCall)"
+                                                :tool-call="toolCall"
+                                                :is-dark="isDark"
+                                                :initial-expanded="false"
+                                            />
+                                        </template>
+                                        <div v-if="part.tool_calls.some(tc => !isIPythonTool(tc))"
+                                            class="tool-calls-container">
+                                            <div class="tool-calls-label">{{ tm('actions.toolsUsed') }}</div>
+                                            <div v-for="(toolCall, tcIndex) in part.tool_calls.filter(tc => !isIPythonTool(tc))" :key="toolCall.id"
+                                                class="tool-call-card" :class="{ 'is-dark': isDark, 'expanded': isToolCallExpanded(index, partIndex, tcIndex) }" :style="isDark ? {
+                                                    backgroundColor: 'rgba(40, 60, 100, 0.4)',
+                                                    borderColor: 'rgba(100, 140, 200, 0.4)'
                                                 } : {}">
-                                                <div class="tool-call-detail-row">
-                                                    <span class="detail-label">ID:</span>
-                                                    <code class="detail-value"
-                                                        :style="isDark ? { backgroundColor: 'transparent' } : {}">{{ toolCall.id
-                                                        }}</code>
+                                                <div class="tool-call-header" :class="{ 'is-dark': isDark }"
+                                                    @click="toggleToolCall(index, partIndex, tcIndex)">
+                                                    <v-icon size="small" class="tool-call-expand-icon">
+                                                        {{ isToolCallExpanded(index, partIndex, tcIndex) ?
+                                                            'mdi-chevron-down' : 'mdi-chevron-right' }}
+                                                    </v-icon>
+                                                    <v-icon size="small" class="tool-call-icon">mdi-wrench-outline</v-icon>
+                                                    <div class="tool-call-info">
+                                                        <span class="tool-call-name">{{ toolCall.name }}</span>
+                                                    </div>
+                                                    <span class="tool-call-status"
+                                                        :class="{ 'status-running': !toolCall.finished_ts, 'status-finished': toolCall.finished_ts }">
+                                                        <template v-if="toolCall.finished_ts">
+                                                            <v-icon size="x-small"
+                                                                class="status-icon">mdi-check-circle</v-icon>
+                                                            {{ formatDuration(toolCall.finished_ts - toolCall.ts) }}
+                                                        </template>
+                                                        <template v-else>
+                                                            <v-icon size="x-small"
+                                                                class="status-icon spinning">mdi-loading</v-icon>
+                                                            {{ getElapsedTime(toolCall.ts) }}
+                                                        </template>
+                                                    </span>
                                                 </div>
-                                                <div class="tool-call-detail-row">
-                                                    <span class="detail-label">Args:</span>
-                                                    <pre class="detail-value detail-json"
-                                                        :style="isDark ? { backgroundColor: 'transparent' } : {}">{{
-                                                            JSON.stringify(toolCall.args, null, 2) }}</pre>
-                                                </div>
-                                                <div v-if="toolCall.result" class="tool-call-detail-row">
-                                                    <span class="detail-label">Result:</span>
-                                                    <pre class="detail-value detail-json detail-result"
-                                                        :style="isDark ? { backgroundColor: 'transparent' } : {}">{{ formatToolResult(toolCall.result) }}
-                                                    </pre>
+                                                <div v-if="isToolCallExpanded(index, partIndex, tcIndex)"
+                                                    class="tool-call-details" :style="isDark ? {
+                                                        borderTopColor: 'rgba(100, 140, 200, 0.3)',
+                                                        backgroundColor: 'rgba(30, 45, 70, 0.5)'
+                                                    } : {}">
+                                                    <div class="tool-call-detail-row">
+                                                        <span class="detail-label">ID:</span>
+                                                        <code class="detail-value"
+                                                            :style="isDark ? { backgroundColor: 'transparent' } : {}">{{ toolCall.id
+                                                            }}</code>
+                                                    </div>
+                                                    <div class="tool-call-detail-row">
+                                                        <span class="detail-label">Args:</span>
+                                                        <pre class="detail-value detail-json"
+                                                            :style="isDark ? { backgroundColor: 'transparent' } : {}">{{
+                                                                JSON.stringify(toolCall.args, null, 2) }}</pre>
+                                                    </div>
+                                                    <div v-if="toolCall.result" class="tool-call-detail-row">
+                                                        <span class="detail-label">Result:</span>
+                                                        <pre class="detail-value detail-json detail-result"
+                                                            :style="isDark ? { backgroundColor: 'transparent' } : {}">{{ formatToolResult(toolCall.result) }}
+                                                        </pre>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </template>
 
                                     <!-- Text (Markdown / Plain multi-line logs) -->
                                     <template v-else-if="part.type === 'plain' && part.text && part.text.trim()">
                                         <pre v-if="shouldRenderAsPlainPre(part.text)" class="bot-plain-pre">{{ formatPlainPreText(part.text) }}</pre>
-                                        <MarkdownContent v-else
-                                            :content="part.text" :typewriter="false" :preprocess-badges="false"
-                                            :is-dark="isDark" />
+                                        <MarkdownRender v-else
+                                            :content="part.text" :typewriter="false"
+                                            class="markdown-content" :class="{ dark: isDark }" />
                                     </template>
 
                                     <!-- Image -->
@@ -297,13 +308,17 @@
 <script lang="ts">
 import type { PropType } from 'vue'
 import { useI18n, useModuleI18n } from '@/i18n/composables';
+import { MarkdownRender, enableKatex, enableMermaid } from 'markstream-vue';
+import 'markstream-vue/index.css';
+import 'katex/dist/katex.min.css';
 import axios from 'axios';
-import MarkdownContent from '@/components/shared/MarkdownContent.vue';
+import IPythonToolBlock from '@/components/chat/message_list_comps/IPythonToolBlock.vue';
 
 export default {
     name: 'MessageList',
     components: {
-        MarkdownContent
+        MarkdownRender,
+        IPythonToolBlock
     },
     props: {
         messages: {
@@ -325,6 +340,8 @@ export default {
     },
     emits: ['openImagePreview', 'replyMessage', 'replyWithText'],
     setup() {
+        enableKatex();
+        enableMermaid();
         const { t } = useI18n();
         const { tm } = useModuleI18n('features/chat');
 
@@ -849,6 +866,10 @@ export default {
 
         isToolCallExpanded(messageIndex, partIndex, toolCallIndex) {
             return this.expandedToolCalls.has(`${messageIndex}-${partIndex}-${toolCallIndex}`);
+        },
+
+        isIPythonTool(toolCall) {
+            return toolCall?.name === 'astrbot_execute_ipython';
         },
 
         // Start timer for updating elapsed time
@@ -1431,11 +1452,11 @@ export default {
 }
 
 .reasoning-header:hover {
-    background-color: rgba(103, 58, 183, 0.08);
+    background-color: rgba(58, 106, 183, 0.08);
 }
 
 .reasoning-header.is-dark:hover {
-    background-color: rgba(103, 58, 183, 0.15);
+    background-color: rgba(58, 108, 183, 0.15);
 }
 
 .reasoning-icon {

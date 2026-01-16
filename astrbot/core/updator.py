@@ -22,7 +22,7 @@ class AstrBotUpdator(RepoZipUpdator):
         super().__init__(repo_mirror)
         self.MAIN_PATH = get_astrbot_path()
         self.ASTRBOT_RELEASE_API = "https://api.soulter.top/releases"
-        self.NEBULA_REPO_URL = "https://github.com/LandfillLand/Nebula"
+        self.NEBULA_REPO_URL = "https://github.com/Neo-Life/Nebula"
 
     async def update_from_nebula_source(self, proxy: str = "") -> None:
         repo_url = self.NEBULA_REPO_URL
