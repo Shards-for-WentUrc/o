@@ -38,31 +38,31 @@
               class="platform-card-item"
             >
               <template #item-details="{ item }">
-                <div class="platform-status-row mb-2" v-if="getPlatformStat(item.id) && (getPlatformStat(item.id)?.status !== 'running' || getPlatformStat(item.id)?.error_count > 0)">
+                <div class="platform-status-row mb-2" v-if="getPlatformStat(item?.id) && (getPlatformStat(item?.id)?.status !== 'running' || (getPlatformStat(item?.id)?.error_count || 0) > 0)">
                   <v-chip
-                    v-if="getPlatformStat(item.id)?.status !== 'running'"
+                    v-if="getPlatformStat(item?.id)?.status !== 'running'"
                     size="small"
-                    :color="getStatusColor(getPlatformStat(item.id)?.status)"
+                    :color="getStatusColor(getPlatformStat(item?.id)?.status)"
                     variant="tonal"
                     class="status-chip"
                   >
-                    <v-icon size="small" start>{{ getStatusIcon(getPlatformStat(item.id)?.status) }}</v-icon>
-                    {{ tm('runtimeStatus.' + (getPlatformStat(item.id)?.status || 'unknown')) }}
+                    <v-icon size="small" start>{{ getStatusIcon(getPlatformStat(item?.id)?.status) }}</v-icon>
+                    {{ tm('runtimeStatus.' + (getPlatformStat(item?.id)?.status || 'unknown')) }}
                   </v-chip>
                   <v-chip
-                    v-if="getPlatformStat(item.id)?.error_count > 0"
+                    v-if="(getPlatformStat(item?.id)?.error_count || 0) > 0"
                     size="small"
                     color="error"
                     variant="tonal"
                     class="error-chip"
-                    :class="{ 'ms-2': getPlatformStat(item.id)?.status !== 'running' }"
+                    :class="{ 'ms-2': getPlatformStat(item?.id)?.status !== 'running' }"
                     @click.stop="showErrorDetails(item)"
                   >
                     <v-icon size="small" start>mdi-bug</v-icon>
-                    {{ getPlatformStat(item.id)?.error_count }} {{ tm('runtimeStatus.errors') }}
+                    {{ getPlatformStat(item?.id)?.error_count || 0 }} {{ tm('runtimeStatus.errors') }}
                   </v-chip>
                 </div>
-                <div v-if="getPlatformStat(item.id)?.unified_webhook && item.webhook_uuid" class="webhook-info">
+                <div v-if="getPlatformStat(item?.id)?.unified_webhook && item.webhook_uuid" class="webhook-info">
                   <v-chip
                     size="small"
                     color="primary"
@@ -197,6 +197,29 @@ import { useCommonStore } from '@/stores/common';
 import { useI18n, useModuleI18n } from '@/i18n/composables';
 import { getPlatformIcon } from '@/utils/platformUtils';
 
+type AnyRecord = Record<string, any>;
+
+type PlatformConfig = AnyRecord & {
+  id: string;
+  type?: string;
+  enable?: boolean;
+  webhook_uuid?: string;
+};
+
+type PlatformLastError = {
+  message: string;
+  timestamp: number;
+  traceback?: string;
+};
+
+type PlatformStat = AnyRecord & {
+  id: string;
+  status?: string;
+  error_count?: number;
+  unified_webhook?: boolean;
+  last_error?: PlatformLastError;
+};
+
 export default {
   name: 'PlatformPage',
   components: {
@@ -222,7 +245,7 @@ export default {
       metadata: {} as any,
       showAddPlatformDialog: false,
 
-      updatingPlatformConfig: {},
+      updatingPlatformConfig: {} as PlatformConfig,
       updatingMode: false,
 
       save_message_snack: false,
@@ -234,8 +257,8 @@ export default {
       showWebhookDialog: false,
       currentWebhookUuid: '',
 
-      platformStats: {} as any,
-      statsRefreshInterval: null as any,
+      platformStats: {} as Record<string, PlatformStat>,
+      statsRefreshInterval: null as ReturnType<typeof setInterval> | null,
 
       showIdConflictDialog: false,
       idConflictResolve: null as any,
@@ -243,7 +266,7 @@ export default {
       oneBotEmptyTokenWarningResolve: null as any,
 
       showErrorDialog: false,
-      currentErrorPlatform: null,
+      currentErrorPlatform: null as PlatformStat | null,
 
       store: useCommonStore()
     }
@@ -284,7 +307,7 @@ export default {
   },
 
   methods: {
-    getPlatformIcon(platform_id) {
+    getPlatformIcon(platform_id: string) {
       const template = this.metadata['platform_group']?.metadata?.platform?.config_template?.[platform_id];
       if (template && template.logo_token) {
         return `/api/file/${template.logo_token}`;
@@ -305,8 +328,8 @@ export default {
     getPlatformStats() {
       axios.get('/api/platform/stats').then((res) => {
         if (res.data.status === 'ok') {
-          const stats = {};
-          for (const platform of res.data.data.platforms || []) {
+          const stats: Record<string, PlatformStat> = {};
+          for (const platform of (res.data.data.platforms || []) as PlatformStat[]) {
             stats[platform.id] = platform;
           }
           this.platformStats = stats;
@@ -316,11 +339,12 @@ export default {
       });
     },
 
-    getPlatformStat(platformId) {
+    getPlatformStat(platformId?: string) {
+      if (!platformId) return null;
       return this.platformStats[platformId] || null;
     },
 
-    getStatusColor(status) {
+    getStatusColor(status: string | undefined) {
       switch (status) {
         case 'running': return 'success';
         case 'error': return 'error';
@@ -330,7 +354,7 @@ export default {
       }
     },
 
-    getStatusIcon(status) {
+    getStatusIcon(status: string | undefined) {
       switch (status) {
         case 'running': return 'mdi-check-circle';
         case 'error': return 'mdi-alert-circle';
@@ -340,16 +364,16 @@ export default {
       }
     },
 
-    showErrorDetails(platform) {
+    showErrorDetails(platform: PlatformConfig) {
       const stat = this.getPlatformStat(platform.id);
-      if (stat && stat.error_count > 0) {
+      if (stat && (stat.error_count || 0) > 0) {
         this.currentErrorPlatform = stat;
         this.showErrorDialog = true;
       }
     },
 
-    editPlatform(platform) {
-      this.updatingPlatformConfig = JSON.parse(JSON.stringify(platform));
+    editPlatform(platform: PlatformConfig) {
+      this.updatingPlatformConfig = JSON.parse(JSON.stringify(platform)) as PlatformConfig;
       this.updatingMode = true;
       this.showAddPlatformDialog = true;
       this.$nextTick(() => {
@@ -357,18 +381,21 @@ export default {
       });
     },
 
-    deletePlatform(platform) {
+    deletePlatform(platform: PlatformConfig) {
       if (confirm(`${this.messages.deleteConfirm} ${platform.id}?`)) {
         axios.post('/api/config/platform/delete', { id: platform.id }).then((res) => {
           this.getConfig();
           this.showSuccess(res.data.message || this.messages.deleteSuccess);
         }).catch((err) => {
-          this.showError(err.response?.data?.message || err.message);
+          const message = axios.isAxiosError(err)
+            ? (err.response?.data?.message || err.message)
+            : (err instanceof Error ? err.message : String(err));
+          this.showError(message);
         });
       }
     },
 
-    platformStatusChange(platform) {
+    platformStatusChange(platform: PlatformConfig) {
       platform.enable = !platform.enable;
 
       axios.post('/api/config/platform/update', {
@@ -379,11 +406,14 @@ export default {
         this.showSuccess(res.data.message || this.messages.statusUpdateSuccess);
       }).catch((err) => {
         platform.enable = !platform.enable;
-        this.showError(err.response?.data?.message || err.message);
+        const message = axios.isAxiosError(err)
+          ? (err.response?.data?.message || err.message)
+          : (err instanceof Error ? err.message : String(err));
+        this.showError(message);
       });
     },
 
-    showToast({ message, type }) {
+    showToast({ message, type }: { message: string; type: 'success' | 'error' }) {
       if (type === 'success') {
         this.showSuccess(message);
       } else if (type === 'error') {
@@ -391,19 +421,19 @@ export default {
       }
     },
 
-    showSuccess(message) {
+    showSuccess(message: string) {
       this.save_message = message;
       this.save_message_success = "success";
       this.save_message_snack = true;
     },
 
-    showError(message) {
+    showError(message: string) {
       this.save_message = message;
       this.save_message_success = "error";
       this.save_message_snack = true;
     },
 
-    getWebhookUrl(webhookUuid) {
+    getWebhookUrl(webhookUuid: string) {
       let callbackBase = this.config_data.callback_api_base || '';
       if (!callbackBase) {
         callbackBase = "http(s)://<your-domain-or-ip>";
@@ -414,12 +444,12 @@ export default {
       return `/api/platform/webhook/${webhookUuid}`;
     },
 
-    openWebhookDialog(webhookUuid) {
+    openWebhookDialog(webhookUuid: string) {
       this.currentWebhookUuid = webhookUuid;
       this.showWebhookDialog = true;
     },
 
-    async copyWebhookUrl(webhookUuid) {
+    async copyWebhookUrl(webhookUuid: string) {
       const url = this.getWebhookUrl(webhookUuid);
       try {
         await navigator.clipboard.writeText(url);

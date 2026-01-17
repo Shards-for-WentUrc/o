@@ -21,9 +21,9 @@ const { t } = useI18n();
 const isOpen = ref(false);
 const title = ref("");
 const message = ref("");
-let resolvePromise = null; 
+let resolvePromise: ((value: boolean) => void) | null = null;
 
-const open = (options) => {
+const open = (options: { title?: string; message?: string } = {}): Promise<boolean> => {
   title.value = options.title || t('core.common.dialog.confirmTitle');
   message.value = options.message || t('core.common.dialog.confirmMessage');
   isOpen.value = true;
@@ -35,12 +35,14 @@ const open = (options) => {
 
 const handleConfirm = () => {
   isOpen.value = false;
-  if (resolvePromise) resolvePromise(true); 
+  if (resolvePromise) resolvePromise(true);
+  resolvePromise = null;
 };
 
 const handleCancel = () => {
   isOpen.value = false;
   if (resolvePromise) resolvePromise(false);
+  resolvePromise = null;
 };
 
 defineExpose({ open });

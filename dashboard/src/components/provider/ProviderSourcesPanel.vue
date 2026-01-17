@@ -123,14 +123,14 @@ const isDark = computed(() => theme.global.current.value.dark)
 
 const selectedId = computed(() => props.selectedProviderSource?.id || null)
 
-const isActive = (source) => {
+const isActive = (source: any) => {
   if (source.isPlaceholder) return false
   return selectedId.value !== null && selectedId.value === source.id
 }
 
-const emitAddSource = (type) => emit('add-provider-source', type)
-const emitSelectSource = (source) => emit('select-provider-source', source)
-const emitDeleteSource = (source) => emit('delete-provider-source', source)
+const emitAddSource = (type: unknown) => emit('add-provider-source', type)
+const emitSelectSource = (source: unknown) => emit('select-provider-source', source)
+const emitDeleteSource = (source: unknown) => emit('delete-provider-source', source)
 </script>
 
 <style scoped>

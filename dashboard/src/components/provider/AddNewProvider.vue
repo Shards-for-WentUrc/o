@@ -82,7 +82,7 @@
 import { computed } from 'vue';
 import { useTheme } from 'vuetify';
 import { useModuleI18n } from '@/i18n/composables';
-import { getProviderIcon, getProviderDescription } from '@/utils/providerUtils';
+import { getProviderIcon, getProviderDescription, type ProviderTemplate } from '@/utils/providerUtils';
 
 export default {
     name: 'AddNewProvider',
@@ -114,7 +114,7 @@ export default {
             get() {
                 return this.show;
             },
-            set(value) {
+            set(value: boolean) {
                 this.$emit('update:show', value);
             }
         },
@@ -124,7 +124,7 @@ export default {
             this.showDialog = false;
         },
 
-        getTemplatesByType(type) {
+        getTemplatesByType(type: string) {
             const templates = (this.metadata as any)?.provider?.config_template || {};
             const filtered: Record<string, any> = {};
 
@@ -140,11 +140,11 @@ export default {
 
         getProviderIcon,
 
-        getProviderDescription(template, name) {
+        getProviderDescription(template: ProviderTemplate, name: string) {
             return getProviderDescription(template, name, this.tm);
         },
 
-        selectProviderTemplate(name) {
+        selectProviderTemplate(name: string) {
             this.$emit('select-template', name);
             this.closeDialog();
         }

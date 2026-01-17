@@ -53,6 +53,11 @@
 import axios from 'axios';
 import { useModuleI18n } from '@/i18n/composables';
 
+type ProxyTestStatus = {
+    available: boolean;
+    latency: number;
+};
+
 export default {
     setup() {
         const { tm } = useModuleI18n('features/settings');
@@ -70,12 +75,12 @@ export default {
             selectedGitHubProxy: "",
             radioValue: "0", // 0: 不使用, 1: 使用
             loadingTestingConnection: false,
-            testingProxies: {},
-            proxyStatus: {},
+            testingProxies: {} as Record<number, boolean>,
+            proxyStatus: {} as Record<number, ProxyTestStatus>,
         }
     },
     methods: {
-        async testSingleProxy(idx) {
+        async testSingleProxy(idx: number) {
             this.testingProxies[idx] = true;
             
             const proxy = this.githubProxies[idx];
@@ -109,9 +114,7 @@ export default {
         async testAllProxies() {
             this.loadingTestingConnection = true;
             
-            const promises = this.githubProxies.map((proxy, idx) => 
-                this.testSingleProxy(idx)
-            );
+            const promises = this.githubProxies.map((_, idx) => this.testSingleProxy(idx));
             
             await Promise.all(promises);
             this.loadingTestingConnection = false;
@@ -123,22 +126,23 @@ export default {
         this.githubProxyRadioControl = localStorage.getItem('githubProxyRadioControl') || "0";
     },
     watch: {
-        selectedGitHubProxy: function (newVal, oldVal) {
+        selectedGitHubProxy: function (newVal: string) {
             if (!newVal) {
                 newVal = ""
             }
             localStorage.setItem('selectedGitHubProxy', newVal);
         },
-        radioValue: function (newVal) {
+        radioValue: function (newVal: string) {
             localStorage.setItem('githubProxyRadioValue', newVal);
             if (newVal === "0") {
                 this.selectedGitHubProxy = "";
             }
         },
-        githubProxyRadioControl: function (newVal) {
+        githubProxyRadioControl: function (newVal: string) {
             localStorage.setItem('githubProxyRadioControl', newVal);
             if (newVal !== "-1") {
-                this.selectedGitHubProxy = this.githubProxies[newVal] || "";
+                const idx = Number.parseInt(newVal, 10);
+                this.selectedGitHubProxy = Number.isFinite(idx) ? (this.githubProxies[idx] || "") : "";
             } else {
                 this.selectedGitHubProxy = "";
             }

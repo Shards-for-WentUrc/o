@@ -69,12 +69,38 @@
 
 <script lang="ts">
 import axios from 'axios';
+import { defineComponent, type PropType } from 'vue';
 import { useTheme } from 'vuetify'; 
 import { useModuleI18n } from '@/i18n/composables';
 
-export default {
+type TimeRange = {
+  label: string;
+  value: number;
+};
+
+type MessageTimeSeriesItem = [number, number];
+
+type ChartPoint = [number, number];
+
+type ChartSeries = {
+  name: string;
+  data: ChartPoint[];
+};
+
+type StatApiResponse = {
+  data: {
+    message_time_series?: MessageTimeSeriesItem[];
+  };
+};
+
+export default defineComponent({
   name: 'MessageStat',
-  props: ['stat'],
+  props: {
+    stat: {
+      type: Object as PropType<unknown>,
+      default: null,
+    },
+  },
 
   setup() {
     const { tm: t } = useModuleI18n('features/dashboard');
@@ -88,15 +114,15 @@ export default {
       dailyAverage: '0',
       growthRate: 0,
       loading: false,
-      selectedTimeRange: null,
-      timeRanges: [],
+      selectedTimeRange: null as TimeRange | null,
+      timeRanges: [] as TimeRange[],
       chartSeries: [
         {
           name: '',
-          data: []
-        }
-      ],
-      messageTimeSeries: []
+          data: [] as ChartPoint[],
+        },
+      ] as ChartSeries[],
+      messageTimeSeries: [] as MessageTimeSeriesItem[],
     };
   },
   
@@ -165,7 +191,7 @@ export default {
             text: this.t('charts.messageTrend.timeLabel')
           },
           labels: {
-            formatter: function (value) {
+            formatter: (value: string | number) => {
               return new Date(value).toLocaleString('zh-CN', {
                 month: 'short',
                 day: 'numeric',
@@ -182,7 +208,7 @@ export default {
           title: {
             text: this.t('charts.messageTrend.messageCount')
           },
-          min: function(min) {
+          min: (min: number) => {
             return min < 10 ? 0 : Math.floor(min * 0.8);
           },
         },
@@ -220,14 +246,17 @@ export default {
   },
 
   methods: {
-    formatNumber(num) {
+    formatNumber(num: number) {
       return new Intl.NumberFormat('zh-CN').format(num);
     },
     
     async fetchMessageSeries() {
+      if (!this.selectedTimeRange) {
+        return;
+      }
       this.loading = true;
       try {
-        const response = await axios.get(`/api/stat/get?offset_sec=${this.selectedTimeRange.value}`);
+        const response = await axios.get<StatApiResponse>(`/api/stat/get?offset_sec=${this.selectedTimeRange.value}`);
         const data = response.data.data;
         
         if (data && data.message_time_series) {
@@ -244,18 +273,18 @@ export default {
     processTimeSeriesData() {
       this.chartSeries = [{
         name: this.t('charts.messageTrend.messageCount'), 
-        data: this.messageTimeSeries.map((item) => {
+        data: this.messageTimeSeries.map((item: MessageTimeSeriesItem): ChartPoint => {
           return [new Date(item[0]*1000).getTime(), item[1]];
         })
       }];
   
       let total = 0;
-      this.messageTimeSeries.forEach(item => {
+      this.messageTimeSeries.forEach((item: MessageTimeSeriesItem) => {
         total += item[1];
       });
       this.totalMessages = this.formatNumber(total);
 
-      if (this.messageTimeSeries.length > 0) {
+      if (this.messageTimeSeries.length > 0 && this.selectedTimeRange) {
         const daysSpan = this.selectedTimeRange.value / 86400; 
         this.dailyAverage = this.formatNumber(Math.round(total / daysSpan));
       }
@@ -273,11 +302,11 @@ export default {
       
       const firstHalf = this.messageTimeSeries
         .slice(0, halfIndex)
-        .reduce((sum, item) => sum + item[1], 0);
+        .reduce((sum: number, item: MessageTimeSeriesItem) => sum + item[1], 0);
         
       const secondHalf = this.messageTimeSeries
         .slice(halfIndex)
-        .reduce((sum, item) => sum + item[1], 0);
+        .reduce((sum: number, item: MessageTimeSeriesItem) => sum + item[1], 0);
 
       if (firstHalf > 0) {
         this.growthRate = Math.round(((secondHalf - firstHalf) / firstHalf) * 100);
@@ -286,7 +315,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style scoped>

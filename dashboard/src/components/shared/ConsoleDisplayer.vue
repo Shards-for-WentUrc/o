@@ -1,8 +1,3 @@
-<script setup lang="ts">
-import axios from 'axios';
-import { EventSourcePolyfill } from 'event-source-polyfill';
-</script>
-
 <template>
   <div>
     <div class="filter-controls mb-2" v-if="showLevelBtns">
@@ -20,6 +15,20 @@ import { EventSourcePolyfill } from 'event-source-polyfill';
 </template>
 
 <script lang="ts">
+import axios from 'axios';
+import { EventSourcePolyfill } from 'event-source-polyfill';
+
+type LogLevel = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL'
+
+type RawLog = Record<string, unknown>
+
+type NormalizedLog = {
+  time: number
+  __timeMs: number
+  level: string
+  data: string
+} & RawLog
+
 export default {
   name: 'ConsoleDisplayer',
   data() {
@@ -35,23 +44,23 @@ export default {
         '\u001b[0m': 'color: inherit; font-weight: normal;',
         '\u001b[32m': 'color: #00FF00;',
         'default': 'color: #FFFFFF;'
-      },
-      logLevels: ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-      selectedLevels: [0, 1, 2, 3, 4],
+      } as Record<string, string>,
+      logLevels: ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] as LogLevel[],
+      selectedLevels: [0, 1, 2, 3, 4] as number[],
       levelColors: {
         'DEBUG': 'grey',
         'INFO': 'blue-lighten-3',
         'WARNING': 'amber',
         'ERROR': 'red',
         'CRITICAL': 'purple'
-      },
-      localLogCache: [],
-      eventSource: null,
-      retryTimer: null,
+      } as Record<LogLevel, string>,
+      localLogCache: [] as NormalizedLog[],
+      eventSource: null as EventSourcePolyfill | null,
+      retryTimer: null as number | null,
       retryAttempts: 0,           
       maxRetryAttempts: 10,       
       baseRetryDelay: 1000,       
-      lastEventId: null,          
+      lastEventId: null as string | null,          
     }
   },
   props: {
@@ -92,17 +101,18 @@ export default {
     this.retryAttempts = 0;
   },
   methods: {
-    normalizeLog(log) {
-      const rawTime = (log && Object.prototype.hasOwnProperty.call(log, 'time')) ? log.time : 0;
+    normalizeLog(log: unknown): NormalizedLog {
+      const raw = (log && typeof log === 'object' ? (log as RawLog) : {})
+      const rawTime = Object.prototype.hasOwnProperty.call(raw, 'time') ? raw.time : 0;
       const timeNum = typeof rawTime === 'string' ? Number.parseFloat(rawTime) : Number(rawTime ?? 0);
       const timeMs = Number.isFinite(timeNum) ? Math.round(timeNum * 1000) : 0;
 
       return {
-        ...log,
+        ...(raw as RawLog),
         time: Number.isFinite(timeNum) ? timeNum : 0,
         __timeMs: timeMs,
-        level: (log?.level ?? '').toString(),
-        data: (log?.data ?? '').toString(),
+        level: (raw.level ?? '').toString(),
+        data: (raw.data ?? '').toString(),
       };
     },
 
@@ -120,7 +130,7 @@ export default {
         return;
       }
 
-      this.eventSource = new EventSourcePolyfill('/api/live-log', {
+      const eventSource = new EventSourcePolyfill('/api/live-log', {
         headers: {
             'Authorization': token ? `Bearer ${token}` : ''
         },
@@ -128,7 +138,9 @@ export default {
         withCredentials: true 
       });
 
-      this.eventSource.onopen = () => {
+      this.eventSource = eventSource;
+
+      eventSource.onopen = () => {
         console.log('日志流连接成功！');
         this.retryAttempts = 0;
 
@@ -137,20 +149,21 @@ export default {
         }
       };
 
-      this.eventSource.onmessage = (event) => {
+      eventSource.onmessage = (event: MessageEvent) => {
         try {
-          if (event.lastEventId) {
-            this.lastEventId = event.lastEventId;
+          const lastId = (event as any)?.lastEventId as unknown
+          if (typeof lastId === 'string' && lastId) {
+            this.lastEventId = lastId;
           }
 
-          const payload = JSON.parse(event.data);
+          const payload = JSON.parse(String(event.data));
           this.processNewLogs([payload]);
         } catch (e) {
           console.error('解析日志失败:', e);
         }
       };
 
-      this.eventSource.onerror = (err) => {
+      eventSource.onerror = (err: unknown) => {
 
         const status = (err as any)?.status;
         if (status === 401 || status === 403) {
@@ -191,7 +204,7 @@ export default {
           this.retryTimer = null;
         }
 
-        this.retryTimer = setTimeout(async () => {
+        this.retryTimer = window.setTimeout(async () => {
           this.retryAttempts++;
           
           if (!this.lastEventId) {
@@ -203,16 +216,16 @@ export default {
       };
     },
 
-    processNewLogs(newLogs) {
+    processNewLogs(newLogs: unknown[]) {
       if (!newLogs || newLogs.length === 0) return;
 
       let hasUpdate = false;
 
-      newLogs.forEach(log => {
+      newLogs.forEach((log) => {
 
         const normalized = this.normalizeLog(log);
 
-        const exists = this.localLogCache.some(existing =>
+        const exists = this.localLogCache.some((existing) =>
           existing.__timeMs === normalized.__timeMs &&
           existing.data === normalized.data &&
           existing.level === normalized.level
@@ -249,11 +262,11 @@ export default {
       }
     },
     
-    getLevelColor(level) {
-      return this.levelColors[level] || 'grey';
+    getLevelColor(level: string) {
+      return this.levelColors[level as LogLevel] || 'grey';
     },
 
-    isLevelSelected(level) {
+    isLevelSelected(level: string) {
       for (let i = 0; i < this.selectedLevels.length; ++i) {
         let level_ = this.logLevels[this.selectedLevels[i]]
         if (level_ === level) {
@@ -269,7 +282,7 @@ export default {
         termElement.innerHTML = '';
         
         if (this.localLogCache && this.localLogCache.length > 0) {
-          this.localLogCache.forEach(logItem => {
+          this.localLogCache.forEach((logItem) => {
             if (this.isLevelSelected(logItem.level)) {
               this.printLog(logItem.data);
             }
@@ -282,7 +295,7 @@ export default {
       this.autoScroll = !this.autoScroll;
     },
 
-    printLog(log) {
+    printLog(log: string) {
       const ele = this.$refs.term as HTMLElement | undefined;
       if (!ele) {
         return;
@@ -292,7 +305,7 @@ export default {
       let style = this.logColorAnsiMap['default']
       for (let key in this.logColorAnsiMap) {
         if (log.startsWith(key)) {
-          style = this.logColorAnsiMap[key]
+          style = this.logColorAnsiMap[key] || this.logColorAnsiMap['default']
           log = log.replace(key, '').replace('\u001b[0m', '')
           break
         }

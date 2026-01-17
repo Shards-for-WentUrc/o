@@ -35,6 +35,7 @@ dashboard/dist/
 package-lock.json
 package.json
 yarn.lock
+*.tsbuildinfo
 
 # Operating System
 **/.DS_Store

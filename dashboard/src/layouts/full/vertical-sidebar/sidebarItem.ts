@@ -6,7 +6,7 @@ export interface menu {
   divider?: boolean;
   chip?: string;
   chipColor?: string;
-  chipVariant?: string;
+  chipVariant?: 'flat' | 'text' | 'elevated' | 'tonal' | 'outlined' | 'plain';
   chipIcon?: string;
   children?: menu[];
   disabled?: boolean;

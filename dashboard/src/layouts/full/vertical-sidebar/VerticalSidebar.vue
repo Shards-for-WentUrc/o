@@ -13,11 +13,13 @@ const customizer = useCustomizerStore();
 const sidebarMenu = shallowRef(sidebarItems);
 
 // 侧边栏分组展开状态持久化
-const openedItems = ref(JSON.parse(localStorage.getItem('sidebar_openedItems') || '[]'));
+const openedItems = ref<string[]>(
+  JSON.parse(localStorage.getItem('sidebar_openedItems') || '[]') as string[]
+);
 watch(openedItems, (val) => localStorage.setItem('sidebar_openedItems', JSON.stringify(val)), { deep: true });
 
 // Apply customization on mount and listen for storage changes
-const handleStorageChange = (e) => {
+const handleStorageChange = (e: StorageEvent) => {
   if (e.key === 'astrbot_sidebar_customization') {
     sidebarMenu.value = applySidebarCustomization(sidebarItems);
   }
@@ -39,7 +41,7 @@ onUnmounted(() => {
   window.removeEventListener('sidebar-customization-changed', handleCustomEvent);
 });
 
-const starCount = ref(null);
+const starCount = ref<number | null>(null);
 
 // 更新日志对话框
 const changelogDialog = ref(false);
@@ -54,14 +56,14 @@ if (window.innerWidth < 768) {
   customizer.Sidebar_drawer = false;
 }
 
-function openLink(url) {
+function openLink(url?: string) {
   if (typeof window !== 'undefined') {
     let url_ = url || "https://docs.astrbot.app";
     window.open(url_, "_blank");
   }
 }
 
-function startSidebarResize(event) {
+function startSidebarResize(event: MouseEvent) {
   isResizing.value = true;
   document.body.style.userSelect = 'none';
   document.body.style.cursor = 'ew-resize';
@@ -69,7 +71,7 @@ function startSidebarResize(event) {
   const startX = event.clientX;
   const startWidth = sidebarWidth.value;
    
-  function onMouseMoveResize(event) {
+  function onMouseMoveResize(event: MouseEvent) {
     if (!isResizing.value) return;
      
     const deltaX = event.clientX - startX;
@@ -89,7 +91,7 @@ function startSidebarResize(event) {
   document.addEventListener('mouseup', onMouseUpResize);
 }
 
-function formatNumber(num) {
+function formatNumber(num: number) {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 

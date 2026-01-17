@@ -153,6 +153,15 @@ import { useI18n, useModuleI18n } from '@/i18n/composables';
 import PersonaForm from '@/components/shared/PersonaForm.vue';
 import ItemCard from '@/components/shared/ItemCard.vue';
 
+type Persona = {
+    persona_id: string;
+    system_prompt: string;
+    begin_dialogs?: string[];
+    tools: string[] | null;
+    created_at: string;
+    updated_at?: string | null;
+};
+
 export default {
     name: 'PersonaPage',
     components: {
@@ -166,12 +175,12 @@ export default {
     },
     data() {
         return {
-            personas: [],
+            personas: [] as Persona[],
             loading: false,
             showPersonaDialog: false,
             showViewDialog: false,
-            editingPersona: null,
-            viewingPersona: null,
+            editingPersona: null as Persona | null,
+            viewingPersona: null as Persona | null,
             showMessage: false,
             message: '',
             messageType: 'success'
@@ -195,12 +204,27 @@ export default {
                 ]);
 
                 if (response.data.status === 'ok') {
-                    this.personas = response.data.data;
+                    const raw = (response.data.data || []) as Array<Record<string, unknown>>;
+                    this.personas = raw.map((p) => {
+                        const beginDialogs = Array.isArray(p.begin_dialogs) ? (p.begin_dialogs as string[]) : undefined;
+                        const tools = p.tools === null ? null : (Array.isArray(p.tools) ? (p.tools as string[]) : []);
+                        return {
+                            persona_id: String(p.persona_id ?? ''),
+                            system_prompt: String(p.system_prompt ?? ''),
+                            begin_dialogs: beginDialogs,
+                            tools,
+                            created_at: String(p.created_at ?? ''),
+                            updated_at: p.updated_at == null ? null : String(p.updated_at)
+                        } as Persona;
+                    });
                 } else {
                     this.showError(response.data.message || this.tm('messages.loadError'));
                 }
             } catch (error) {
-                this.showError(error.response?.data?.message || this.tm('messages.loadError'));
+                const message = axios.isAxiosError(error)
+                    ? (error.response?.data?.message || error.message)
+                    : (error instanceof Error ? error.message : undefined);
+                this.showError(message || this.tm('messages.loadError'));
             } finally {
                 this.loading = false;
             }
@@ -211,22 +235,22 @@ export default {
             this.showPersonaDialog = true;
         },
 
-        editPersona(persona) {
+        editPersona(persona: Persona) {
             this.editingPersona = persona;
             this.showPersonaDialog = true;
         },
 
-        viewPersona(persona) {
+        viewPersona(persona: Persona) {
             this.viewingPersona = persona;
             this.showViewDialog = true;
         },
 
-        handlePersonaSaved(message) {
+        handlePersonaSaved(message: string) {
             this.showSuccess(message);
             this.loadPersonas();
         },
 
-        async deletePersona(persona) {
+        async deletePersona(persona: Persona) {
             if (!confirm(this.tm('messages.deleteConfirm', { id: persona.persona_id }))) {
                 return;
             }
@@ -243,27 +267,30 @@ export default {
                     this.showError(response.data.message || this.tm('messages.deleteError'));
                 }
             } catch (error) {
-                this.showError(error.response?.data?.message || this.tm('messages.deleteError'));
+                const message = axios.isAxiosError(error)
+                    ? (error.response?.data?.message || error.message)
+                    : (error instanceof Error ? error.message : undefined);
+                this.showError(message || this.tm('messages.deleteError'));
             }
         },
 
-        truncateText(text, maxLength) {
+        truncateText(text: string, maxLength: number) {
             if (!text) return '';
             return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
         },
 
-        formatDate(dateString) {
+        formatDate(dateString: string) {
             if (!dateString) return '';
             return new Date(dateString).toLocaleString();
         },
 
-        showSuccess(message) {
+        showSuccess(message: string) {
             this.message = message;
             this.messageType = 'success';
             this.showMessage = true;
         },
 
-        showError(message) {
+        showError(message: string) {
             this.message = message;
             this.messageType = 'error';
             this.showMessage = true;

@@ -33,9 +33,9 @@ const dialog = computed({
 const changelogContent = ref('');
 const changelogLoading = ref(false);
 const changelogError = ref('');
-const changelogVersion = ref('');
-const selectedVersion = ref('');
-const availableVersions = ref([]);
+const changelogVersion = ref<string>('');
+const selectedVersion = ref<string | null>(null);
+const availableVersions = ref<string[]>([]);
 const loadingVersions = ref(false);
 
 // 获取当前版本号（从版本信息中提取）

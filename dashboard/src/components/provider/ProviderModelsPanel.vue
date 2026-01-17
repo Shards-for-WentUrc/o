@@ -226,7 +226,7 @@ const modelSearchProxy = computed({
   set: (val) => emit('update:modelSearch', val)
 })
 
-const isProviderTesting = (providerId) => props.testingProviders.includes(providerId)
+const isProviderTesting = (providerId: string) => props.testingProviders.includes(providerId)
 </script>
 
 <style scoped>

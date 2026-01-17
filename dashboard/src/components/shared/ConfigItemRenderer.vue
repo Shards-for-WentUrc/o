@@ -257,21 +257,27 @@ const modelValueObject = computed(() => {
   return {} as Record<string, any>
 })
 
-function emitUpdate(val) {
+function emitUpdate(val: unknown) {
   emit('update:modelValue', val)
 }
 
-function toNumber(val) {
-  const n = parseFloat(val)
-  return isNaN(n) ? 0 : n
+function toNumber(val: unknown) {
+  const n = typeof val === 'number' ? val : parseFloat(String(val))
+  return Number.isFinite(n) ? n : 0
 }
 
-function getLabel(itemMeta, index, option) {
+function getLabel(itemMeta: any, index: string | number, option: unknown) {
   const labels = getTranslatedLabels(itemMeta)
-  return labels ? labels[index] : option
+  if (labels) {
+    const numericIndex = typeof index === 'number' ? index : Number(index)
+    if (Number.isFinite(numericIndex)) return labels[numericIndex]
+  }
+  if (typeof option === 'string') return option
+  if (typeof option === 'number' || typeof option === 'boolean') return String(option)
+  return undefined
 }
 
-function getTranslatedLabels(itemMeta) {
+function getTranslatedLabels(itemMeta: any): string[] | null {
   if (!itemMeta?.labels) return null
   if (typeof itemMeta.labels === 'string') {
     const translatedLabels = getRaw(itemMeta.labels)
@@ -285,18 +291,18 @@ function getTranslatedLabels(itemMeta) {
   return null
 }
 
-function getSelectItems(itemMeta) {
+function getSelectItems(itemMeta: any) {
   const labels = getTranslatedLabels(itemMeta)
   if (labels && itemMeta.options) {
-    return itemMeta.options.map((value, index) => ({
+    return itemMeta.options.map((value: unknown, index: number) => ({
       title: labels[index] || value,
-      value: value
+      value
     }))
   }
   return itemMeta.options || []
 }
 
-function parseSpecialValue(value) {
+function parseSpecialValue(value: unknown) {
   if (!value || typeof value !== 'string') {
     return { name: '', subtype: '' }
   }
@@ -307,11 +313,11 @@ function parseSpecialValue(value) {
   }
 }
 
-function getSpecialName(value) {
+function getSpecialName(value: unknown) {
   return parseSpecialValue(value).name
 }
 
-function getSpecialSubtype(value) {
+function getSpecialSubtype(value: unknown) {
   return parseSpecialValue(value).subtype
 }
 </script>

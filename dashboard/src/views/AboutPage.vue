@@ -32,7 +32,7 @@ export default {
     },
     methods: {
         useCustomizerStore,
-        open(url) {
+        open(url: string) {
             window.open(url, '_blank');
         }
     }

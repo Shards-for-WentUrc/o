@@ -62,7 +62,7 @@ export default {
     const { tm: tmConfig } = useModuleI18n('features/config');
     const { tm: tmMetadata } = useModuleI18n('features/config-metadata');
     
-    const tm = (key) => {
+    const tm = (key: string) => {
       const metadataResult = tmMetadata(key);
       if (!metadataResult.startsWith('[MISSING:') && !metadataResult.startsWith('[INVALID:')) {
         return metadataResult;

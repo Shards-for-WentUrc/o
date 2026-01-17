@@ -33,7 +33,7 @@ export default {
     methods: {
         async check() {
             this.newStartTime = -1
-            this.startTime = useCommonStore().getStartTime()
+            this.startTime = useCommonStore().getStartTime() ?? -1
             this.visible = true
             this.status = ""
             console.log('start wfr')

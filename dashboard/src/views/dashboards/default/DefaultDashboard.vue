@@ -100,7 +100,7 @@ export default {
       noticeContent: '',
       noticeType: '',
       lastUpdated: '',
-      refreshInterval: null,
+      refreshInterval: null as ReturnType<typeof setInterval> | null,
       isRefreshing: false
     };
   },

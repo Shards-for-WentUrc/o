@@ -124,10 +124,10 @@
                                                 :initial-expanded="false"
                                             />
                                         </template>
-                                        <div v-if="part.tool_calls.some(tc => !isIPythonTool(tc))"
+                                        <div v-if="hasNonIPythonToolCalls(part.tool_calls)"
                                             class="tool-calls-container">
                                             <div class="tool-calls-label">{{ tm('actions.toolsUsed') }}</div>
-                                            <div v-for="(toolCall, tcIndex) in part.tool_calls.filter(tc => !isIPythonTool(tc))" :key="toolCall.id"
+                                            <div v-for="(toolCall, tcIndex) in getNonIPythonToolCalls(part.tool_calls)" :key="toolCall.id"
                                                 class="tool-call-card" :class="{ 'is-dark': isDark, 'expanded': isToolCallExpanded(index, partIndex, tcIndex) }" :style="isDark ? {
                                                     backgroundColor: 'rgba(40, 60, 100, 0.4)',
                                                     borderColor: 'rgba(100, 140, 200, 0.4)'
@@ -391,11 +391,11 @@ export default {
             // 选中文本相关状态
             selectedText: {
                 content: '',
-                messageIndex: null,
+                messageIndex: null as number | null,
                 position: { top: 0, left: 0 }
             },
             // Web search results mapping: { 'uuid.idx': { url, title, snippet } }
-            webSearchResults: {}
+            webSearchResults: {} as Record<string, { url?: string; title?: string; snippet?: string }>
         };
     },
     mounted() {
@@ -417,19 +417,19 @@ export default {
     methods: {
         // 从消息中提取 web_search_tavily 的搜索结果
         extractWebSearchResults() {
-            const results = {};
+            const results: Record<string, { url?: string; title?: string; snippet?: string }> = {};
             
-            this.messages.forEach(msg => {
+            this.messages.forEach((msg: any) => {
                 if (msg.content.type !== 'bot' || !Array.isArray(msg.content.message)) {
                     return;
                 }
                 
-                msg.content.message.forEach(part => {
+                msg.content.message.forEach((part: any) => {
                     if (part.type !== 'tool_call' || !Array.isArray(part.tool_calls)) {
                         return;
                     }
                     
-                    part.tool_calls.forEach(toolCall => {
+                    part.tool_calls.forEach((toolCall: any) => {
                         // 检查是否是 web_search_tavily 工具调用
                         if (toolCall.name !== 'web_search_tavily' || !toolCall.result) {
                             return;
@@ -442,9 +442,10 @@ export default {
                                 : toolCall.result;
                             
                             if (resultData.results && Array.isArray(resultData.results)) {
-                                resultData.results.forEach(item => {
-                                    if (item.index) {
-                                        results[item.index] = {
+                                resultData.results.forEach((item: any) => {
+                                    if (item.index != null) {
+                                        const key = String(item.index);
+                                        results[key] = {
                                             url: item.url,
                                             title: item.title,
                                             snippet: item.snippet
@@ -460,6 +461,14 @@ export default {
             });
             
             this.webSearchResults = results;
+        },
+
+        hasNonIPythonToolCalls(toolCalls: unknown) {
+            return Array.isArray(toolCalls) && toolCalls.some((toolCall: any) => !this.isIPythonTool(toolCall));
+        },
+
+        getNonIPythonToolCalls(toolCalls: unknown) {
+            return Array.isArray(toolCalls) ? toolCalls.filter((toolCall: any) => !this.isIPythonTool(toolCall)) : [];
         },
         // 复制文本到剪贴板（不使用已弃用的 document.execCommand）
         // 成功返回 true，失败返回 false。
@@ -625,13 +634,13 @@ export default {
         },
 
         // 检查 message 中是否有音频
-        hasAudio(messageParts) {
+        hasAudio(messageParts: unknown) {
             if (!Array.isArray(messageParts)) return false;
-            return messageParts.some(part => part.type === 'record' && part.embedded_url);
+            return messageParts.some((part: any) => part.type === 'record' && part.embedded_url);
         },
 
         // 获取被引用消息的内容
-        getReplyContent(messageId) {
+        getReplyContent(messageId: string | number) {
             const replyMsg = this.messages.find(m => m.id === messageId);
             if (!replyMsg) {
                 return this.tm('reply.notFound');
@@ -639,8 +648,8 @@ export default {
             let content = '';
             if (Array.isArray(replyMsg.content.message)) {
                 const textParts = replyMsg.content.message
-                    .filter(part => part.type === 'plain' && part.text)
-                    .map(part => part.text);
+                    .filter((part: any) => part.type === 'plain' && part.text)
+                    .map((part: any) => part.text);
                 content = textParts.join('');
             }
             // 截断过长内容
@@ -651,7 +660,7 @@ export default {
         },
 
         // 滚动到指定消息
-        scrollToMessage(messageId) {
+        scrollToMessage(messageId: string | number) {
             const msgIndex = this.messages.findIndex(m => m.id === messageId);
             if (msgIndex === -1) return;
 
@@ -668,7 +677,7 @@ export default {
         },
 
         // Toggle reasoning expansion state
-        toggleReasoning(messageIndex) {
+        toggleReasoning(messageIndex: number) {
             if (this.expandedReasoning.has(messageIndex)) {
                 this.expandedReasoning.delete(messageIndex);
             } else {
@@ -679,12 +688,12 @@ export default {
         },
 
         // Check if reasoning is expanded
-        isReasoningExpanded(messageIndex) {
+        isReasoningExpanded(messageIndex: number) {
             return this.expandedReasoning.has(messageIndex);
         },
 
         // 下载文件
-        async downloadFile(file) {
+        async downloadFile(file: any) {
             if (!file.attachment_id) return;
 
             // 标记为下载中
@@ -713,7 +722,7 @@ export default {
         },
 
         // 复制代码到剪贴板
-        async copyCodeToClipboard(code) {
+        async copyCodeToClipboard(code: string) {
             const ok = await this.copyTextToClipboard(code ?? '');
             if (ok) {
                 console.log('代码已复制到剪贴板');
@@ -723,25 +732,25 @@ export default {
         },
 
         // 复制bot消息到剪贴板
-        async copyBotMessage(messageParts, messageIndex) {
+        async copyBotMessage(messageParts: unknown, messageIndex: number) {
             let textToCopy = '';
 
             if (Array.isArray(messageParts)) {
                 // 提取所有文本内容
                 const textContents = messageParts
-                    .filter(part => part.type === 'plain' && part.text)
-                    .map(part => part.text);
+                    .filter((part: any) => part.type === 'plain' && part.text)
+                    .map((part: any) => part.text);
                 textToCopy = textContents.join('\n');
 
                 // 检查是否有图片
-                const imageCount = messageParts.filter(part => part.type === 'image' && part.embedded_url).length;
+                const imageCount = messageParts.filter((part: any) => part.type === 'image' && part.embedded_url).length;
                 if (imageCount > 0) {
                     if (textToCopy) textToCopy += '\n\n';
                     textToCopy += `[包含 ${imageCount} 张图片]`;
                 }
 
                 // 检查是否有音频
-                const hasAudio = messageParts.some(part => part.type === 'record' && part.embedded_url);
+                const hasAudio = messageParts.some((part: any) => part.type === 'record' && part.embedded_url);
                 if (hasAudio) {
                     if (textToCopy) textToCopy += '\n\n';
                     textToCopy += '[包含音频内容]';
@@ -763,7 +772,7 @@ export default {
         },
 
         // 显示复制成功提示
-        showCopySuccess(messageIndex) {
+        showCopySuccess(messageIndex: number) {
             this.copiedMessages.add(messageIndex);
 
             // 2秒后移除成功状态
@@ -773,12 +782,12 @@ export default {
         },
 
         // 获取复制按钮图标
-        getCopyIcon(messageIndex) {
+        getCopyIcon(messageIndex: number) {
             return this.copiedMessages.has(messageIndex) ? 'mdi-check' : 'mdi-content-copy';
         },
 
         // 检查是否为复制成功状态
-        isCopySuccess(messageIndex) {
+        isCopySuccess(messageIndex: number) {
             return this.copiedMessages.has(messageIndex);
         },
 
@@ -876,7 +885,7 @@ export default {
         },
 
         // 格式化消息时间，支持别名显示
-        formatMessageTime(dateStr) {
+        formatMessageTime(dateStr: string | number | Date) {
             if (!dateStr) return '';
 
             const date = new Date(dateStr);
@@ -907,7 +916,7 @@ export default {
         },
 
         // Tool call related methods
-        toggleToolCall(messageIndex, partIndex, toolCallIndex) {
+        toggleToolCall(messageIndex: string | number, partIndex: string | number, toolCallIndex: string | number) {
             const key = `${messageIndex}-${partIndex}-${toolCallIndex}`;
             if (this.expandedToolCalls.has(key)) {
                 this.expandedToolCalls.delete(key);
@@ -918,11 +927,11 @@ export default {
             this.expandedToolCalls = new Set(this.expandedToolCalls);
         },
 
-        isToolCallExpanded(messageIndex, partIndex, toolCallIndex) {
+        isToolCallExpanded(messageIndex: string | number, partIndex: string | number, toolCallIndex: string | number) {
             return this.expandedToolCalls.has(`${messageIndex}-${partIndex}-${toolCallIndex}`);
         },
 
-        isIPythonTool(toolCall) {
+        isIPythonTool(toolCall: any) {
             return toolCall?.name === 'astrbot_execute_ipython';
         },
 
@@ -969,13 +978,13 @@ export default {
         },
 
         // Get elapsed time string for a tool call
-        getElapsedTime(startTs) {
+        getElapsedTime(startTs: number) {
             const elapsed = this.currentTime - startTs;
             return this.formatDuration(elapsed);
         },
 
         // Format duration in seconds to human readable string
-        formatDuration(seconds) {
+        formatDuration(seconds: number) {
             if (seconds < 1) {
                 return `${Math.round(seconds * 1000)}ms`;
             } else if (seconds < 60) {
@@ -988,38 +997,38 @@ export default {
         },
 
         // Format tool result for display
-        formatToolResult(result) {
+        formatToolResult(result: unknown) {
             if (!result) return '';
             // Try to parse as JSON for pretty formatting
             try {
-                const parsed = JSON.parse(result);
+                const parsed = JSON.parse(String(result));
                 return JSON.stringify(parsed, null, 2);
             } catch {
-                return result;
+                return String(result);
             }
         },
 
         // Get input tokens (input_other + input_cached)
-        getInputTokens(tokenUsage) {
+        getInputTokens(tokenUsage: any) {
             if (!tokenUsage) return 0;
             return (tokenUsage.input_other || 0) + (tokenUsage.input_cached || 0);
         },
 
         // Format agent duration
-        formatAgentDuration(agentStats) {
+        formatAgentDuration(agentStats: any) {
             if (!agentStats) return '';
             const duration = agentStats.end_time - agentStats.start_time;
             return this.formatDuration(duration);
         },
 
         // Format time to first token
-        formatTTFT(ttft) {
+        formatTTFT(ttft: number) {
             if (!ttft || ttft <= 0) return '';
             return this.formatDuration(ttft);
         },
 
         // Open refs sidebar
-        openRefsSidebar(refs) {
+        openRefsSidebar(refs: unknown) {
             this.$emit('openRefs', refs);
         }
     }

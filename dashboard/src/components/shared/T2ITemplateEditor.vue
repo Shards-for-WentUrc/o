@@ -211,7 +211,7 @@
       <v-card>
         <v-card-title>{{ tm('t2iTemplateEditor.confirmDelete') }}</v-card-title>
         <v-card-text>
-          {{ tm('t2iTemplateEditor.confirmDeleteMessage', { name: selectedTemplate }) }}
+          {{ tm('t2iTemplateEditor.confirmDeleteMessage', { name: selectedTemplate ?? '' }) }}
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -226,7 +226,7 @@
       <v-card>
         <v-card-title>{{ tm('t2iTemplateEditor.confirmAction') }}</v-card-title>
         <v-card-text>
-          {{ tm('t2iTemplateEditor.confirmApplyMessage', { name: selectedTemplate }) }}
+          {{ tm('t2iTemplateEditor.confirmApplyMessage', { name: selectedTemplate ?? '' }) }}
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -303,9 +303,9 @@ const previewLoading = ref(false)
 const applyLoading = ref(false)
 
 // 模板管理
-const templates = ref([])
+const templates = ref<Array<{ name: string; [key: string]: unknown }>>([])
 const activeTemplate = ref('base')
-const selectedTemplate = ref(null)
+const selectedTemplate = ref<string | null>(null)
 const editingName = ref('') // 用于新建模式下的名称输入
 const templateContent = ref('')
 const isCreatingNew = ref(false)
@@ -315,7 +315,7 @@ const resetDialog = ref(false)
 const deleteDialog = ref(false)
 const applyAndCloseDialog = ref(false)
 
-const previewFrame = ref(null)
+const previewFrame = ref<HTMLIFrameElement | null>(null)
 
 // --- 编辑器配置 ---
 const editorTheme = computed(() => 'vs-light')
@@ -379,7 +379,7 @@ const loadInitialData = async () => {
   }
 }
 
-const loadTemplateContent = async (name) => {
+const loadTemplateContent = async (name: string) => {
   if (!name) return
   previewLoading.value = true
   try {
@@ -424,7 +424,7 @@ const saveTemplate = async () => {
   }
 }
 
-const setActiveTemplate = async (name) => {
+const setActiveTemplate = async (name: string) => {
   applyLoading.value = true
   try {
     await axios.post('/api/t2i/templates/set_active', { name })
@@ -515,7 +515,9 @@ const confirmApplyAndClose = async () => {
   if (isCreatingNew.value) return
   
   await saveTemplate()
-  await setActiveTemplate(selectedTemplate.value)
+  if (selectedTemplate.value) {
+    await setActiveTemplate(selectedTemplate.value)
+  }
   applyAndCloseDialog.value = false
   closeDialog()
 }
@@ -523,9 +525,7 @@ const confirmApplyAndClose = async () => {
 const refreshPreview = () => {
   previewLoading.value = true
   nextTick(() => {
-    if (previewFrame.value) {
-      previewFrame.value.contentWindow.location.reload()
-    }
+    previewFrame.value?.contentWindow?.location.reload()
     setTimeout(() => previewLoading.value = false, 500)
   })
 }

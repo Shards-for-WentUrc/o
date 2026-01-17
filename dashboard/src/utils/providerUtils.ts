@@ -9,7 +9,7 @@ export type ProviderTemplate = {
   [key: string]: unknown
 }
 
-export type TranslateFn = (key: string, params?: Record<string, unknown>) => string
+export type TranslateFn = (key: string, params?: Record<string, string | number>) => string
 
 /**
  * 获取提供商类型对应的图标

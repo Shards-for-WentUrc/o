@@ -123,7 +123,13 @@ const loading = ref(false)
 const error = ref('')
 const migrating = ref(false)
 const migrationCompleted = ref(false)
-const migrationResult = ref(null)
+type MigrationResult = {
+    success: boolean
+    message?: string
+    cancelled?: boolean
+}
+
+const migrationResult = ref<MigrationResult | null>(null)
 
 type Platform = {
     id: string
@@ -139,9 +145,9 @@ type PlatformGroup = {
 
 const platforms = ref<Platform[]>([])
 const selectedPlatforms = ref<Record<string, string>>({})
-const wfr = ref(null)
+const wfr = ref<InstanceType<typeof WaitingForRestart> | null>(null)
 
-let resolvePromise = null
+let resolvePromise: ((result: MigrationResult | null) => void) | null = null
 
 // 计算属性：将平台按类型分组
 const platformGroups = computed<PlatformGroup[]>(() => {
@@ -213,7 +219,7 @@ const handleMigration = async () => {
 
     try {
         // 构建 platform_id_map
-        const platformIdMap = {}
+        const platformIdMap: Record<string, { platform_id: string; platform_type: string }> = {}
 
         Object.entries(selectedPlatforms.value).forEach(([type, platformId]) => {
             const selectedPlatform = platforms.value.find(p => p.id === platformId)
@@ -242,7 +248,7 @@ const handleMigration = async () => {
         }
     } catch (err) {
         console.error('Migration failed:', err)
-        error.value = err.message || t('features.migration.dialog.migrationError')
+        error.value = (err instanceof Error ? err.message : '') || t('features.migration.dialog.migrationError')
     } finally {
         migrating.value = false
     }
@@ -253,6 +259,7 @@ const handleCancel = () => {
     isOpen.value = false
     if (resolvePromise) {
         resolvePromise({ success: false, cancelled: true })
+        resolvePromise = null
     }
 }
 
@@ -261,12 +268,13 @@ const handleClose = () => {
     isOpen.value = false
     if (resolvePromise) {
         resolvePromise(migrationResult.value)
+        resolvePromise = null
     }
 }
 
 
 // 获取平台显示标签
-const getPlatformLabel = (platform) => {
+const getPlatformLabel = (platform: Platform) => {
     const name = platform.name || platform.id || 'Unknown'
     return `${name}`
 }
@@ -274,9 +282,7 @@ const getPlatformLabel = (platform) => {
 // 重启 AstrBot
 const restartAstrBot = () => {
     axios.post('/api/stat/restart-core').then(() => {
-        if (wfr.value) {
-            wfr.value.check();
-        }
+        wfr.value?.check()
     })
 }
 
@@ -285,7 +291,7 @@ const open = () => {
     isOpen.value = true
 
     return new Promise((resolve) => {
-        resolvePromise = resolve
+        resolvePromise = resolve as (result: MigrationResult | null) => void
     })
 }
 

@@ -91,9 +91,9 @@
                 </div>
                 <div>
                   <div class="text-subtitle-1 font-weight-medium">
-                    {{ resolveRow(item).display_name && resolveRow(item).display_name.length ? resolveRow(item).display_name : resolveRow(item).name }}
+                    {{ getExtensionDisplayTitle(item) }}
                   </div>
-                  <div v-if="resolveRow(item).display_name && resolveRow(item).display_name.length" class="text-caption text-medium-emphasis mt-1">
+                  <div v-if="hasExtensionDisplayName(item)" class="text-caption text-medium-emphasis mt-1">
                     {{ resolveRow(item).name }}
                   </div>
                   <div v-if="resolveRow(item).reserved" class="d-flex align-center mt-1">
@@ -368,6 +368,16 @@ const resolveRow = (row: unknown): InstalledPlugin => {
     return maybeWrapper.raw
   }
   return row as InstalledPlugin
+}
+
+const hasExtensionDisplayName = (row: unknown) => {
+  const resolved = resolveRow(row)
+  return !!resolved.display_name?.length
+}
+
+const getExtensionDisplayTitle = (row: unknown) => {
+  const resolved = resolveRow(row)
+  return (resolved.display_name?.length ? resolved.display_name : resolved.name) as string
 }
 
 const extensionMessage = computed(() => props.extensionMessage ?? '')

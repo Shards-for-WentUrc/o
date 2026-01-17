@@ -198,8 +198,34 @@
 <script lang="ts">
 import axios from 'axios';
 import { useModuleI18n } from '@/i18n/composables';
+import { defineComponent, type PropType } from 'vue';
 
-export default {
+type ToolInfo = {
+    name: string;
+    description?: string;
+    mcp_server_name?: string;
+}
+
+type McpServer = {
+    name: string;
+    tools?: string[];
+}
+
+type Persona = {
+    persona_id: string;
+    system_prompt: string;
+    begin_dialogs?: string[];
+    tools?: string[] | null;
+}
+
+type PersonaFormState = {
+    persona_id: string;
+    system_prompt: string;
+    begin_dialogs: string[];
+    tools: string[] | null;
+}
+
+export default defineComponent({
     name: 'PersonaForm',
     props: {
         modelValue: {
@@ -207,7 +233,7 @@ export default {
             default: false
         },
         editingPersona: {
-            type: Object,
+            type: Object as PropType<Persona | null>,
             default: null
         }
     },
@@ -218,26 +244,26 @@ export default {
     },
     data() {
         return {
-            toolSelectValue: '0', // 默认选择全部工具
+            toolSelectValue: '0' as '0' | '1', // 默认选择全部工具
             saving: false,
-            expandedPanels: [],
+            expandedPanels: [] as string[],
             formValid: false,
-            mcpServers: [],
-            availableTools: [],
+            mcpServers: [] as McpServer[],
+            availableTools: [] as ToolInfo[],
             loadingTools: false,
             personaForm: {
                 persona_id: '',
                 system_prompt: '',
-                begin_dialogs: [],
-                tools: []
-            },
+                begin_dialogs: [] as string[],
+                tools: null as string[] | null
+            } as PersonaFormState,
             personaIdRules: [
-                v => !!v || this.tm('validation.required'),
-                v => (v && v.length >= 0) || this.tm('validation.minLength', { min: 2 }),
+                (v: unknown) => !!String(v ?? '') || this.tm('validation.required'),
+                (v: unknown) => (String(v ?? '').length >= 0) || this.tm('validation.minLength', { min: 2 }),
             ],
             systemPromptRules: [
-                v => !!v || this.tm('validation.required'),
-                v => (v && v.length >= 10) || this.tm('validation.minLength', { min: 10 })
+                (v: unknown) => !!String(v ?? '') || this.tm('validation.required'),
+                (v: unknown) => (String(v ?? '').length >= 10) || this.tm('validation.minLength', { min: 10 })
             ],
             toolSearch: ''
         }
@@ -248,7 +274,7 @@ export default {
             get() {
                 return this.modelValue;
             },
-            set(value) {
+            set(value: boolean) {
                 this.$emit('update:modelValue', value);
             }
         },
@@ -266,7 +292,7 @@ export default {
     },
 
     watch: {
-        modelValue(newValue) {
+        modelValue(newValue: boolean) {
             if (newValue) {
                 // 只有在不是编辑状态时才初始化空表单
                 if (this.editingPersona) {
@@ -280,7 +306,7 @@ export default {
         },
         editingPersona: {
             immediate: true,
-            handler(newPersona) {
+            handler(newPersona: Persona | null) {
                 // 只有在对话框打开时才处理editingPersona的变化
                 if (this.modelValue) {
                     if (newPersona) {
@@ -291,7 +317,7 @@ export default {
                 }
             }
         },
-        toolSelectValue(newValue) {
+        toolSelectValue(newValue: '0' | '1') {
             if (newValue === '0') {
                 // 选择全部工具
                 this.personaForm.tools = null;
@@ -310,13 +336,13 @@ export default {
                 persona_id: '',
                 system_prompt: '',
                 begin_dialogs: [],
-                tools: []
+                tools: null
             };
             this.toolSelectValue = '0';
             this.expandedPanels = [];
         },
 
-        initFormWithPersona(persona) {
+        initFormWithPersona(persona: Persona) {
             this.personaForm = {
                 persona_id: persona.persona_id,
                 system_prompt: persona.system_prompt,
@@ -336,12 +362,13 @@ export default {
             try {
                 const response = await axios.get('/api/tools/mcp/servers');
                 if (response.data.status === 'ok') {
-                    this.mcpServers = response.data.data || [];
+                    this.mcpServers = (response.data.data || []) as McpServer[];
                 } else {
                     this.$emit('error', response.data.message || 'Failed to load MCP servers');
                 }
             } catch (error) {
-                this.$emit('error', error.response?.data?.message || 'Failed to load MCP servers');
+                const err = error as any;
+                this.$emit('error', err?.response?.data?.message || 'Failed to load MCP servers');
                 this.mcpServers = [];
             }
         },
@@ -351,12 +378,13 @@ export default {
             try {
                 const response = await axios.get('/api/tools/list');
                 if (response.data.status === 'ok') {
-                    this.availableTools = response.data.data || [];
+                    this.availableTools = (response.data.data || []) as ToolInfo[];
                 } else {
                     this.$emit('error', response.data.message || 'Failed to load tools');
                 }
             } catch (error) {
-                this.$emit('error', error.response?.data?.message || 'Failed to load tools');
+                const err = error as any;
+                this.$emit('error', err?.response?.data?.message || 'Failed to load tools');
                 this.availableTools = [];
             } finally {
                 this.loadingTools = false;
@@ -389,7 +417,8 @@ export default {
                     this.$emit('error', response.data.message || this.tm('messages.saveError'));
                 }
             } catch (error) {
-                this.$emit('error', error.response?.data?.message || this.tm('messages.saveError'));
+                const err = error as any;
+                this.$emit('error', err?.response?.data?.message || this.tm('messages.saveError'));
             }
             this.saving = false;
         },
@@ -402,7 +431,7 @@ export default {
             }
         },
 
-        removeDialog(index) {
+        removeDialog(index: number) {
             // 如果是偶数索引（用户消息），删除用户消息和对应的助手消息
             if (index % 2 === 0 && index + 1 < this.personaForm.begin_dialogs.length) {
                 this.personaForm.begin_dialogs.splice(index, 2);
@@ -413,44 +442,44 @@ export default {
             }
         },
 
-        toggleMcpServer(server) {
+        toggleMcpServer(server: McpServer) {
             if (!server.tools || server.tools.length === 0) return;
+
+            const serverTools = server.tools;
 
             // 如果当前是全选状态，需要先转换为具体的工具列表
             if (this.personaForm.tools === null) {
                 // 从全选状态转换为去除该服务器工具的状态
                 this.personaForm.tools = this.availableTools.map(tool => tool.name)
-                    .filter(toolName => !server.tools.includes(toolName));
+                    .filter(toolName => !serverTools.includes(toolName));
                 this.toolSelectValue = '1'; // 切换到指定工具模式
                 return;
             }
 
-            // 确保tools是数组
-            if (!Array.isArray(this.personaForm.tools)) {
-                this.personaForm.tools = [];
+            let selectedTools = this.personaForm.tools;
+            if (!Array.isArray(selectedTools)) {
+                selectedTools = [];
+                this.personaForm.tools = selectedTools;
                 this.toolSelectValue = '1';
             }
 
-            // 检查是否所有服务器的工具都已选中
-            const serverTools = server.tools;
-            const allSelected = serverTools.every(toolName => this.personaForm.tools.includes(toolName));
+            const allSelected = serverTools.every(toolName => selectedTools.includes(toolName));
 
             if (allSelected) {
                 // 移除所有服务器工具
-                this.personaForm.tools = this.personaForm.tools.filter(
-                    toolName => !serverTools.includes(toolName)
-                );
+                const nextTools = selectedTools.filter(toolName => !serverTools.includes(toolName));
+                this.personaForm.tools = nextTools;
             } else {
                 // 添加所有服务器工具
                 serverTools.forEach(toolName => {
-                    if (!this.personaForm.tools.includes(toolName)) {
-                        this.personaForm.tools.push(toolName);
+                    if (!selectedTools.includes(toolName)) {
+                        selectedTools.push(toolName);
                     }
                 });
             }
         },
 
-        toggleTool(toolName) {
+        toggleTool(toolName: string) {
             // 如果当前是全选状态，需要先转换为具体的工具列表
             if (this.personaForm.tools === null) {
                 // 如果是全选状态，点击某个工具表示要取消选择该工具
@@ -473,7 +502,7 @@ export default {
             }
         },
 
-        removeTool(toolName) {
+        removeTool(toolName: string) {
             // 如果当前是全选状态，需要先转换为具体的工具列表
             if (this.personaForm.tools === null) {
                 // 创建一个包含所有工具的数组，然后移除指定工具
@@ -487,20 +516,20 @@ export default {
             }
         },
 
-        truncateText(text, maxLength) {
+        truncateText(text: string | null | undefined, maxLength: number) {
             if (!text) return '';
             return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
         },
 
-        getDialogRules(index) {
+        getDialogRules(index: number) {
             const dialogType = index % 2 === 0 ? this.tm('form.userMessage') : this.tm('form.assistantMessage');
             return [
-                v => !!v || this.tm('validation.dialogRequired', { type: dialogType }),
-                v => (v && v.trim().length > 0) || this.tm('validation.dialogRequired', { type: dialogType })
+                (v: unknown) => !!String(v ?? '') || this.tm('validation.dialogRequired', { type: dialogType }),
+                (v: unknown) => (String(v ?? '').trim().length > 0) || this.tm('validation.dialogRequired', { type: dialogType })
             ];
         },
 
-        isToolSelected(toolName) {
+        isToolSelected(toolName: string) {
             // 如果是全选状态，所有工具都被选中
             if (this.personaForm.tools === null) {
                 return true;
@@ -508,8 +537,10 @@ export default {
             return Array.isArray(this.personaForm.tools) && this.personaForm.tools.includes(toolName);
         },
 
-        isServerSelected(server) {
+        isServerSelected(server: McpServer) {
             if (!server.tools || server.tools.length === 0) return false;
+
+            const serverTools = server.tools;
 
             // 如果是全选状态，所有服务器都被选中
             if (this.personaForm.tools === null) {
@@ -517,11 +548,12 @@ export default {
             }
 
             // 检查服务器的所有工具是否都已选中
-            return Array.isArray(this.personaForm.tools) &&
-                server.tools.every(toolName => this.personaForm.tools.includes(toolName));
+            const selectedTools = this.personaForm.tools;
+            if (!Array.isArray(selectedTools)) return false;
+            return serverTools.every(toolName => selectedTools.includes(toolName));
         }
     }
-}
+})
 </script>
 
 <style scoped>

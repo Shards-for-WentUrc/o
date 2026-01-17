@@ -158,11 +158,11 @@ async function loadKnowledgeBases() {
   }
 }
 
-function isSelected(kbName) {
+function isSelected(kbName: string) {
   return selectedKnowledgeBases.value.includes(kbName)
 }
 
-function selectKnowledgeBase(kbName) {
+function selectKnowledgeBase(kbName: string) {
   // 多选模式：切换选中状态
   const index = selectedKnowledgeBases.value.indexOf(kbName)
   if (index > -1) {
@@ -172,7 +172,7 @@ function selectKnowledgeBase(kbName) {
   }
 }
 
-function removeKnowledgeBase(kbName) {
+function removeKnowledgeBase(kbName: string) {
   const index = selectedKnowledgeBases.value.indexOf(kbName)
   if (index > -1) {
     selectedKnowledgeBases.value.splice(index, 1)

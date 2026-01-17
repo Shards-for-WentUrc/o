@@ -277,11 +277,11 @@ function addItem() {
   }
 }
 
-function removeItem(index) {
+function removeItem(index: number) {
   localItems.value.splice(index, 1)
 }
 
-function startEdit(index, item) {
+function startEdit(index: number, item: string) {
   editIndex.value = index
   editItem.value = item
 }

@@ -238,11 +238,20 @@
 
 <script lang="ts">
 import axios from 'axios';
+import type { PropType } from 'vue'
 import AstrBotCoreConfigWrapper from '@/components/config/AstrBotCoreConfigWrapper.vue';
 import WaitingForRestart from '@/components/shared/WaitingForRestart.vue';
 import StandaloneChat from '@/components/chat/StandaloneChat.vue';
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
 import { useI18n, useModuleI18n } from '@/i18n/composables';
+
+type AnyRecord = Record<string, any>
+
+type ConfigInfo = {
+  id: string
+  name: string
+  [key: string]: any
+}
 
 export default {
   name: 'ConfigPage',
@@ -254,7 +263,7 @@ export default {
   },
   props: {
     initialConfigId: {
-      type: String,
+      type: String as PropType<string | null>,
       default: null
     }
   },
@@ -279,13 +288,13 @@ export default {
       };
     },
     configInfoNameList() {
-      return this.configInfoList.map(info => info.name);
+      return this.configInfoList.map((info) => info.name);
     },
     selectedConfigInfo() {
-      return (this.configInfoList as any[]).find((info: any) => info.id === this.selectedConfigID) || ({} as any);
+      return this.configInfoList.find((info) => info.id === this.selectedConfigID) || ({} as ConfigInfo);
     },
     configSelectItems() {
-      const items = [...(this.configInfoList as any[])];
+      const items = [...this.configInfoList];
       items.push({
         id: '_%manage%_',
         name: this.tm('configManagement.manageConfigs'),
@@ -319,7 +328,7 @@ export default {
         config: {}
       },
       fetched: false,
-      metadata: {},
+        metadata: {} as AnyRecord,
       save_message_snack: false,
       save_message: "",
       save_message_success: "",
@@ -332,16 +341,16 @@ export default {
       isSystemConfig: false,
 
       // 多配置文件管理
-      selectedConfigID: null, // 用于存储当前选中的配置项信息
-      configInfoList: [],
+      selectedConfigID: null as string | null, // 用于存储当前选中的配置项信息
+      configInfoList: [] as ConfigInfo[],
       configFormData: {
         name: '',
       },
-      editingConfigId: null,
+      editingConfigId: null as string | null,
 
       // 测试聊天
       testChatDrawer: false,
-      testConfigId: null,
+      testConfigId: null as string | null,
     }
   },
   mounted() {
@@ -351,10 +360,10 @@ export default {
     this.configType = this.isSystemConfig ? 'system' : 'normal';
   },
   methods: {
-    getConfigInfoList(abconf_id?: string) {
+    getConfigInfoList(abconf_id?: string | null) {
       // 获取配置列表
       axios.get('/api/config/abconfs').then((res) => {
-        this.configInfoList = res.data.data.info_list;
+        this.configInfoList = (res.data.data.info_list || []) as ConfigInfo[];
 
         if (abconf_id) {
           let matched = false;
@@ -370,7 +379,7 @@ export default {
           if (!matched && this.configInfoList.length) {
             // 当找不到目标配置时，默认展示列表中的第一个配置
             this.selectedConfigID = this.configInfoList[0].id;
-            this.getConfig(this.selectedConfigID);
+            this.getConfig(this.configInfoList[0].id);
           }
         }
       }).catch((err) => {
@@ -379,14 +388,14 @@ export default {
         this.save_message_success = "error";
       });
     },
-    getConfig(abconf_id?: string) {
+    getConfig(abconf_id?: string | null) {
       this.fetched = false
       const params: any = {};
 
       if (this.isSystemConfig) {
         params.system_config = '1';
       } else {
-        params.id = abconf_id || this.selectedConfigID;
+        params.id = abconf_id || this.selectedConfigID || undefined;
       }
 
       axios.get('/api/config/abconf', {
@@ -476,7 +485,7 @@ export default {
         this.save_message_success = "error";
       });
     },
-    onConfigSelect(value) {
+    onConfigSelect(value: string) {
       if (value === '_%manage%_') {
         this.configManageDialog = true;
         // 重置选择到之前的值
@@ -495,7 +504,7 @@ export default {
       };
       this.editingConfigId = null;
     },
-    startEditConfig(config) {
+    startEditConfig(config: ConfigInfo) {
       this.showConfigForm = true;
       this.isEditingConfig = true;
       this.editingConfigId = config.id;
@@ -526,12 +535,12 @@ export default {
         this.createNewConfig();
       }
     },
-    confirmDeleteConfig(config) {
+    confirmDeleteConfig(config: ConfigInfo) {
       if (confirm(this.tm('configManagement.confirmDelete').replace('{name}', config.name))) {
         this.deleteConfig(config.id);
       }
     },
-    deleteConfig(configId) {
+    deleteConfig(configId: string) {
       axios.post('/api/config/abconf/delete', {
         id: configId
       }).then((res) => {
