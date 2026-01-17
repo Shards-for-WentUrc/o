@@ -2,7 +2,7 @@
 
 当前状态：
 - 已完成 Dashboard 全量 TypeScript 化（不再依赖/引用本地 JS 源码）
-- 构建目标已对齐到 ES2022
+- 构建目标已对齐到 ES2022，使用了 `"strict": true,` 模式
 - 本仓库内 `pnpm build` 与 `pnpm typecheck` 均可通过
 
 ## 开发
