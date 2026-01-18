@@ -92,15 +92,22 @@ function startSidebarResize(event: MouseEvent) {
 }
 
 function formatNumber(num: number) {
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  }
+  return num.toString();
 }
 
 async function fetchStarCount() {
   try {
-    const response = await fetch('https://cloud.astrbot.app/api/v1/github/repo-info');
+    const response = await fetch('https://api.github.com/repos/AstrBotDevs/AstrBot');
     const data = await response.json();
-    if (data.data && data.data.stargazers_count) {
-      starCount.value = data.data.stargazers_count;
+    
+    if (data && typeof data.stargazers_count === 'number') {
+      starCount.value = data.stargazers_count;
       console.debug('Fetched star count:', starCount.value);
     }
   } catch (error) {
