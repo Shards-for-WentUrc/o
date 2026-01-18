@@ -4,7 +4,7 @@
 
 ## 示例插件
 
-这些示例插件位于 `data/plugins`，用于演示不同前端技术如何接入 Dashboard 插件页面机制：
+这些示例插件位于 `https://github.com/Neo-Life/astrbot_plugins_demo`，用于演示不同前端技术如何接入 Dashboard 插件页面机制：
 
 - `astrbot_plugin_frontend_demo_dom`：纯 DOM/原生 JS（无外部依赖）
 - `astrbot_plugin_frontend_demo_vue`：Vue 3（通过 unpkg 的浏览器 ESM 版本）
