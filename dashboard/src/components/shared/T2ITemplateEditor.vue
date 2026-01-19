@@ -329,15 +329,31 @@ const editorOptions: any = {
 }
 
 // --- 预览逻辑 ---
-const previewData = {
-  text: tm('t2iTemplateEditor.previewText') || '这是一个示例文本，用于预览模板效果。\n\n这里可以包含多行文本，支持换行和各种格式。',
-  version: tm('t2iTemplateEditor.previewVersion', { version: 'v4.0.0' }) || 'v4.0.0'
+const previewText = tm('t2iTemplateEditor.previewText') || '这是一个示例文本，用于预览模板效果。\n\n这里可以包含多行文本，支持换行和各种格式。'
+const previewVersion = ref<string>('v4.0.0')
+
+const syncPreviewVersion = async () => {
+  try {
+    const res = await axios.get('/api/stat/version')
+    const rawVersion = res?.data?.data?.version
+    if (typeof rawVersion === 'string' && rawVersion.trim()) {
+      previewVersion.value = `v${rawVersion.trim().replace(/^v/i, '')}`
+    }
+  } catch (error) {
+    // 预览版本获取失败不阻塞编辑器使用，回退默认值
+    console.error('获取当前版本失败:', error)
+  }
 }
+
+const previewData = computed(() => ({
+  text: previewText,
+  version: tm('t2iTemplateEditor.previewVersion', { version: previewVersion.value }) || previewVersion.value
+}))
 const previewContent = computed(() => {
   try {
     let content = templateContent.value
-    content = content.replace(/\{\{\s*text\s*\|\s*safe\s*\}\}/g, previewData.text)
-    content = content.replace(/\{\{\s*version\s*\}\}/g, previewData.version)
+    content = content.replace(/\{\{\s*text\s*\|\s*safe\s*\}\}/g, previewData.value.text)
+    content = content.replace(/\{\{\s*version\s*\}\}/g, previewData.value.version)
     return injectHljsShim(content)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -524,6 +540,7 @@ const confirmApplyAndClose = async () => {
 
 const refreshPreview = () => {
   previewLoading.value = true
+  syncPreviewVersion()
   nextTick(() => {
     previewFrame.value?.contentWindow?.location.reload()
     setTimeout(() => previewLoading.value = false, 500)
@@ -538,6 +555,7 @@ const closeDialog = () => {
 
 watch(dialog, (newVal) => {
   if (newVal) {
+    syncPreviewVersion()
     loadInitialData()
   } else {
     // 关闭时重置状态
