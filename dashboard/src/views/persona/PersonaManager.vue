@@ -547,7 +547,7 @@ export default defineComponent({
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: rgba(var(--v-theme-surface)) !important;
+    color: rgb(var(--v-theme-surface)) !important;
 }
 
 .count-chip :deep(.v-chip__content) {
@@ -556,6 +556,7 @@ export default defineComponent({
     align-items: center;
     justify-content: center;
     line-height: 1;
+    color: rgb(var(--v-theme-surface)) !important;
 }
 
 .system-prompt-content {

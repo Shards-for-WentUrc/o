@@ -133,7 +133,18 @@
   <div class="mt-4 market-page">
     <div class="d-flex align-center mb-2" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
       <div class="d-flex align-center" style="gap: 6px;">
-        <h2>{{ tm('market.allPlugins') }}({{ filteredMarketPlugins.length }})</h2>
+        <h2 class="d-flex align-center" style="gap: 8px;">
+          <span>{{ tm('market.allPlugins') }}</span>
+          <v-chip
+            size="small"
+            variant="flat"
+            color="primary"
+            rounded="pill"
+            class="market-count-chip"
+          >
+            {{ filteredMarketPlugins.length }}
+          </v-chip>
+        </h2>
         <v-btn icon variant="text" @click="emit('refresh')" :loading="refreshingMarket || marketLoading">
           <v-icon>mdi-refresh</v-icon>
         </v-btn>
@@ -573,5 +584,24 @@ const toItemCardPlugin = (plugin: PluginMarketItem) => {
 
 .market-fab-badge :deep(.v-badge__badge) {
   color: #fff !important;
+}
+
+.market-count-chip {
+  min-width: 2.5em;
+  padding: 0 0.75em;
+  height: 1.6em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(var(--v-theme-surface)) !important;
+}
+
+.market-count-chip :deep(.v-chip__content) {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  color: rgb(var(--v-theme-surface)) !important;
 }
 </style>
