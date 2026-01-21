@@ -39,19 +39,20 @@
                     </div>
                 </div>
 
-                <!-- 加载状态 - 只有加载超过阈值才显示骨架屏 -->
-                <v-fade-transition>
-                    <div v-if="showSkeleton" class="loading-container">
-                        <v-row>
-                            <v-col v-for="n in 6" :key="n" cols="12" sm="6" lg="4" xl="3">
-                                <v-skeleton-loader type="card" rounded="lg" />
-                            </v-col>
-                        </v-row>
-                    </div>
-                </v-fade-transition>
+                <div class="content-area">
+                    <!-- 加载状态 - 只有加载超过阈值才显示骨架屏（覆盖层，不参与布局） -->
+                    <v-fade-transition @after-leave="onSkeletonAfterLeave">
+                        <div v-if="showSkeleton" class="loading-container loading-overlay">
+                            <v-row>
+                                <v-col v-for="n in 6" :key="n" cols="12" sm="6" lg="4" xl="3">
+                                    <v-skeleton-loader type="card" rounded="lg" />
+                                </v-col>
+                            </v-row>
+                        </div>
+                    </v-fade-transition>
 
-                <!-- 内容区域 -->
-                <div v-if="!loading && !showSkeleton">
+                    <!-- 内容区域（骨架淡出期间保持隐藏，避免视觉跳变） -->
+                    <div v-if="!loading" :class="{ 'content-hidden': skeletonAnimating }">
                     <!-- 子文件夹区域 -->
                     <div v-if="currentFolders.length > 0" class="folders-section mb-6">
                         <h3 class="text-subtitle-1 font-weight-medium mb-3 d-flex align-center ga-2">
@@ -121,6 +122,7 @@
                             </div>
                         </v-card>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -323,7 +325,8 @@ export default defineComponent({
 
             // 骨架屏延迟显示控制
             showSkeleton: false,
-            skeletonTimer: null as ReturnType<typeof setTimeout> | null
+            skeletonTimer: null as ReturnType<typeof setTimeout> | null,
+            skeletonAnimating: false
         };
     },
     computed: {
@@ -353,11 +356,10 @@ export default defineComponent({
         loading: {
             handler(newVal: boolean) {
                 if (newVal) {
-                    // 加载开始时，延迟 150ms 后才显示骨架屏
-                    // 如果加载在 150ms 内完成，则不显示骨架屏，避免闪烁
                     this.skeletonTimer = setTimeout(() => {
                         if (this.loading) {
                             this.showSkeleton = true;
+                            this.skeletonAnimating = true;
                         }
                     }, 150);
                 } else {
@@ -366,7 +368,14 @@ export default defineComponent({
                         clearTimeout(this.skeletonTimer);
                         this.skeletonTimer = null;
                     }
-                    this.showSkeleton = false;
+
+                    // 如果骨架屏曾经显示过，则等待淡出动画结束后再显示内容，避免位置跳变
+                    if (this.showSkeleton) {
+                        this.showSkeleton = false;
+                    } else {
+                        this.showSkeleton = false;
+                        this.skeletonAnimating = false;
+                    }
                 }
             },
             immediate: true
@@ -383,6 +392,14 @@ export default defineComponent({
     },
     methods: {
         ...mapActions(usePersonaStore, ['loadFolderTree', 'navigateToFolder', 'updateFolder', 'deleteFolder', 'deletePersona', 'refreshCurrentFolder', 'movePersonaToFolder']),
+
+        onSkeletonAfterLeave() {
+            // 骨架屏淡出动画结束后，允许内容渲染
+            // 额外延迟一小段时间，让布局稳定，避免“从下到上”闪动
+            setTimeout(() => {
+                this.skeletonAnimating = false;
+            }, 80);
+        },
 
         async initialize() {
             await Promise.all([
@@ -538,6 +555,22 @@ export default defineComponent({
 .main-content {
     flex: 1;
     min-width: 0;
+}
+
+.content-area {
+    position: relative;
+}
+
+.loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: rgb(var(--v-theme-surface));
+}
+
+.content-hidden {
+    visibility: hidden;
 }
 
 .count-chip {
