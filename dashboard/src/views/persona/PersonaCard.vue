@@ -1,5 +1,6 @@
 <template>
     <ItemCard :item="persona" title-field="persona_id" :show-switch="false" title-class="text-h3" :pin-actions="false"
+        :show-edit-button="false" :show-delete-button="false"
         class="persona-card-fixed"
         @click="$emit('view')" @edit="$emit('edit')" @delete="$emit('delete')" draggable="true" @dragstart="handleDragStart"
         @dragend="handleDragEnd">
@@ -40,9 +41,29 @@
         </template>
 
         <template #actions>
-            <v-btn variant="tonal" color="primary" size="small" rounded="xl" @click.stop="$emit('move')">
-                {{ tm('persona.contextMenu.moveTo') }}
+            <v-btn variant="tonal" color="primary" size="small" rounded="xl" @click.stop="$emit('edit')">
+                {{ t('core.common.itemCard.edit') }}
             </v-btn>
+
+            <v-menu location="bottom end">
+                <template #activator="{ props }">
+                    <v-btn
+                        v-bind="props"
+                        icon="mdi-dots-horizontal"
+                        variant="text"
+                        size="small"
+                        @click.stop
+                    />
+                </template>
+                <v-list density="compact">
+                    <v-list-item @click="$emit('move')">
+                        <v-list-item-title>{{ tm('persona.contextMenu.moveTo') }}</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item @click="$emit('delete')">
+                        <v-list-item-title class="text-error">{{ t('core.common.itemCard.delete') }}</v-list-item-title>
+                    </v-list-item>
+                </v-list>
+            </v-menu>
         </template>
     </ItemCard>
 
@@ -55,7 +76,7 @@
 
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue';
-import { useModuleI18n } from '@/i18n/composables';
+import { useI18n, useModuleI18n } from '@/i18n/composables';
 import ItemCard from '@/components/shared/ItemCard.vue';
 
 interface Persona {
@@ -80,8 +101,9 @@ export default defineComponent({
     },
     emits: ['view', 'edit', 'move', 'delete'],
     setup() {
+        const { t } = useI18n();
         const { tm } = useModuleI18n('features/persona');
-        return { tm };
+        return { t, tm };
     },
     data() {
         return {

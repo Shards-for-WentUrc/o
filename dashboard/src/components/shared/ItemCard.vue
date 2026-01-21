@@ -5,7 +5,10 @@
     v-bind="$attrs" 
   >
     <v-card-title v-if="!hideHeader" class="d-flex justify-space-between align-center pb-1 pt-3 flex-shrink-0">
-      <span :class="['text-truncate', titleClass]" :title="getItemTitle()">{{ getItemTitle() }}</span>
+      <div class="d-flex align-center ga-2 flex-grow-1" style="min-width: 0;">
+        <slot name="title-prepend" :item="item"></slot>
+        <span :class="['text-truncate', titleClass]" style="min-width: 0;" :title="getItemTitle()">{{ getItemTitle() }}</span>
+      </div>
       
       <v-tooltip location="top" v-if="showSwitch">
         <template v-slot:activator="{ props }">

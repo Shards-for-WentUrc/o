@@ -4,15 +4,14 @@
         :class="{ 'drag-over': isDragOver }"
         @click="$emit('click')"
         @dragover.prevent="handleDragOver" @dragleave="handleDragLeave" @drop.prevent="handleDrop">
+        <template #title-prepend>
+            <v-icon size="20" color="amber-darken-2">mdi-folder</v-icon>
+        </template>
+
         <template #item-details>
             <div class="folder-content-container">
-                <div class="d-flex align-center">
-                    <v-icon size="40" color="amber-darken-2" class="mr-3">mdi-folder</v-icon>
-                    <div class="folder-info flex-grow-1 overflow-hidden">
-                        <div v-if="folder.description" class="text-body-2 text-medium-emphasis text-truncate">
-                            {{ folder.description }}
-                        </div>
-                    </div>
+                <div v-if="folder.description" class="folder-description text-body-2 text-medium-emphasis">
+                    {{ folder.description }}
                 </div>
             </div>
         </template>
@@ -21,15 +20,29 @@
             <v-btn variant="tonal" color="secondary" size="small" rounded="xl" @click.stop="$emit('open')">
                 {{ tm('folder.contextMenu.open') }}
             </v-btn>
-            <v-btn variant="tonal" color="primary" size="small" rounded="xl" @click.stop="$emit('rename')">
-                {{ tm('folder.contextMenu.rename') }}
-            </v-btn>
-            <v-btn variant="tonal" color="primary" size="small" rounded="xl" @click.stop="$emit('move')">
-                {{ tm('folder.contextMenu.moveTo') }}
-            </v-btn>
-            <v-btn variant="outlined" color="error" size="small" rounded="xl" @click.stop="$emit('delete')">
-                {{ tm('folder.contextMenu.delete') }}
-            </v-btn>
+
+            <v-menu location="bottom end">
+                <template #activator="{ props }">
+                    <v-btn
+                        v-bind="props"
+                        icon="mdi-dots-horizontal"
+                        variant="text"
+                        size="small"
+                        @click.stop
+                    />
+                </template>
+                <v-list density="compact">
+                    <v-list-item @click="$emit('rename')">
+                        <v-list-item-title>{{ tm('folder.contextMenu.rename') }}</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item @click="$emit('move')">
+                        <v-list-item-title>{{ tm('folder.contextMenu.moveTo') }}</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item @click="$emit('delete')">
+                        <v-list-item-title class="text-error">{{ tm('folder.contextMenu.delete') }}</v-list-item-title>
+                    </v-list-item>
+                </v-list>
+            </v-menu>
         </template>
     </ItemCard>
 </template>
@@ -111,6 +124,16 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     padding: 8px 12px;
+}
+
+.folder-description {
+    word-break: break-word;
+    white-space: normal;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+    -webkit-box-orient: vertical;
 }
 
 .folder-info {

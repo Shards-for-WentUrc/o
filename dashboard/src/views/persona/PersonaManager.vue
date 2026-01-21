@@ -51,12 +51,21 @@
                 </v-fade-transition>
 
                 <!-- 内容区域 -->
-                <div v-if="!loading">
+                <div v-if="!loading && !showSkeleton">
                     <!-- 子文件夹区域 -->
                     <div v-if="currentFolders.length > 0" class="folders-section mb-6">
-                        <h3 class="text-subtitle-1 font-weight-medium mb-3">
+                        <h3 class="text-subtitle-1 font-weight-medium mb-3 d-flex align-center ga-2">
                             <v-icon size="small" class="mr-1">mdi-folder</v-icon>
-                            {{ tm('folder.foldersTitle') }} ({{ currentFolders.length }})
+                            <span>{{ tm('folder.foldersTitle') }}</span>
+                            <v-chip
+                                size="small"
+                                variant="flat"
+                                color="primary"
+                                rounded="pill"
+                                class="count-chip"
+                            >
+                                {{ currentFolders.length }}
+                            </v-chip>
                         </h3>
                         <v-row>
                             <v-col v-for="folder in currentFolders" :key="folder.folder_id" cols="12" sm="6" lg="4"
@@ -71,9 +80,18 @@
 
                     <!-- Persona 区域 -->
                     <div v-if="currentPersonas.length > 0" class="personas-section">
-                        <h3 class="text-subtitle-1 font-weight-medium mb-3">
+                        <h3 class="text-subtitle-1 font-weight-medium mb-3 d-flex align-center ga-2">
                             <v-icon size="small" class="mr-1">mdi-account-heart</v-icon>
-                            {{ tm('persona.personasTitle') }} ({{ currentPersonas.length }})
+                            <span>{{ tm('persona.personasTitle') }}</span>
+                            <v-chip
+                                size="small"
+                                variant="flat"
+                                color="primary"
+                                rounded="pill"
+                                class="count-chip"
+                            >
+                                {{ currentPersonas.length }}
+                            </v-chip>
                         </h3>
                         <v-row>
                             <v-col v-for="persona in currentPersonas" :key="persona.persona_id" cols="12" sm="6" lg="4"
@@ -520,6 +538,24 @@ export default defineComponent({
 .main-content {
     flex: 1;
     min-width: 0;
+}
+
+.count-chip {
+    min-width: 2.5em;
+    padding: 0 0.75em;
+    height: 1.6em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(var(--v-theme-surface)) !important;
+}
+
+.count-chip :deep(.v-chip__content) {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .system-prompt-content {
