@@ -18,7 +18,7 @@
             <transition name="fade">
                 <div v-if="isDragging" class="drop-overlay">
                     <div class="drop-overlay-content">
-                        <v-icon size="48" color="deep-purple">mdi-cloud-upload</v-icon>
+                        <v-icon size="48" color="primary">mdi-cloud-upload</v-icon>
                         <span class="drop-text">{{ tm('input.dropToUpload') }}</span>
                     </div>
                 </div>
@@ -532,8 +532,8 @@ defineExpose({
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(103, 58, 183, 0.15);
-    border: 2px dashed rgba(103, 58, 183, 0.5);
+    background-color: rgba(var(--v-theme-primary), 0.15);
+    border: 2px dashed rgba(var(--v-theme-primary), 0.5);
     border-radius: 24px;
     display: flex;
     align-items: center;
@@ -552,7 +552,7 @@ defineExpose({
 .drop-text {
     font-size: 16px;
     font-weight: 500;
-    color: #673ab7;
+    color: rgb(var(--v-theme-primary));
 }
 
 /* Fade transition for drop overlay */
