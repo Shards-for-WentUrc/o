@@ -531,11 +531,11 @@ export default defineComponent({
     line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-word;
-    background: rgba(var(--v-theme-surface-variant), 0.3);
+    background: rgba(var(--v-theme-surface-variant), 0.08);
 }
 
 .dialog-content {
-    background-color: rgba(var(--v-theme-surface-variant), 0.3);
+    background-color: rgba(var(--v-theme-surface-variant), 0.08);
     padding: 8px 12px;
     border-radius: 8px;
     font-size: 14px;
