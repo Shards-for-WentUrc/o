@@ -134,13 +134,13 @@
 
         <!-- 查看 Persona 详情对话框 -->
         <v-dialog v-model="showViewDialog" max-width="700px">
-            <v-card v-if="viewingPersona">
-                <v-card-title class="d-flex justify-space-between align-center">
+            <v-card v-if="viewingPersona" class="persona-view-card">
+                <v-card-title class="v-card-title--sticky d-flex justify-space-between align-center">
                     <span class="text-h5">{{ viewingPersona.persona_id }}</span>
                     <v-btn icon="mdi-close" variant="text" @click="showViewDialog = false" />
                 </v-card-title>
 
-                <v-card-text>
+                <v-card-text class="persona-view-body">
                     <div class="mb-4">
                         <h4 class="text-h6 mb-2">{{ tm('form.systemPrompt') }}</h4>
                         <pre class="system-prompt-content">{{ viewingPersona.system_prompt }}</pre>
@@ -555,6 +555,26 @@ export default defineComponent({
 .main-content {
     flex: 1;
     min-width: 0;
+}
+
+.persona-view-card {
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.persona-view-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.v-card-title--sticky {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: rgb(var(--v-theme-surface));
 }
 
 .content-area {
