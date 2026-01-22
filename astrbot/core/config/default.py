@@ -162,8 +162,8 @@ DEFAULT_CONFIG = {
     "dashboard": {
         "enable": True,
         "channel": "nebula",
-        "username": "astrbot",
-        "password": "77b90590a8945a7d36c963981a307dc9",
+        "username": "nebula",
+        "password": "2852dea96871a5907a83402772ef2192",
         "jwt_secret": "",
         "host": "0.0.0.0",
         "port": 6185,

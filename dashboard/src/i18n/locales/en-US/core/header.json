@@ -74,7 +74,7 @@
       "newUsername": "New Username (Optional)",
       "passwordHint": "Password must be at least 8 characters",
       "usernameHint": "Leave blank to keep current username",
-      "defaultCredentials": "Default username and password are both astrbot"
+      "defaultCredentials": "Default username and password are both nebula"
     },
     "validation": {
       "passwordRequired": "Please enter password",
