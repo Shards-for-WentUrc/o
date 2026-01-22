@@ -341,7 +341,7 @@ function handleReplyAfterLeave() {
 
 function handleKeyDown(e: KeyboardEvent) {
     // Enter 发送消息或触发命令
-    if (e.keyCode === 13 && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
 
         // 检查是否是 /astr_live_dev 命令
@@ -356,7 +356,7 @@ function handleKeyDown(e: KeyboardEvent) {
         }
     }
 
-    if (e.ctrlKey && e.keyCode === 66) {
+    if (e.ctrlKey && e.code === 'KeyB') {
         e.preventDefault();
         if (ctrlKeyDown.value) return;
 
@@ -370,7 +370,7 @@ function handleKeyDown(e: KeyboardEvent) {
 }
 
 function handleKeyUp(e: KeyboardEvent) {
-    if (e.keyCode === 66) {
+    if (e.code === 'KeyB') {
         ctrlKeyDown.value = false;
 
         if (ctrlKeyTimer.value) {
