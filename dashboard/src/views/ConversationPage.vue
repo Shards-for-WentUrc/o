@@ -1109,7 +1109,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .actions-wrapper {
     display: flex;
     justify-content: flex-end;
