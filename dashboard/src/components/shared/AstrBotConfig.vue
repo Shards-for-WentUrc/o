@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
 import { ref, computed } from 'vue'
 import ConfigItemRenderer from './ConfigItemRenderer.vue'
@@ -6,6 +6,8 @@ import TemplateListEditor from './TemplateListEditor.vue'
 import { useI18n } from '@/i18n/composables'
 import axios from 'axios'
 import { useToast } from '@/utils/toast'
+
+type AnyRecord = Record<string, any>
 
 const props = defineProps({
   metadata: {
@@ -38,14 +40,14 @@ const dialog = ref(false)
 const currentEditingKey = ref('')
 const currentEditingLanguage = ref('json')
 const currentEditingTheme = ref('vs-light')
-let currentEditingKeyIterable = null
+let currentEditingKeyIterable: AnyRecord = {}
 const loadingEmbeddingDim = ref(false)
 
-function openEditorDialog(key, value, theme, language) {
-  currentEditingKey.value = key
+function openEditorDialog(key: string | number, value: unknown, theme?: string, language?: string) {
+  currentEditingKey.value = String(key)
   currentEditingLanguage.value = language || 'json'
   currentEditingTheme.value = theme || 'vs-light'
-  currentEditingKeyIterable = value
+  currentEditingKeyIterable = value && typeof value === 'object' ? (value as AnyRecord) : {}
   dialog.value = true
 }
 
@@ -54,7 +56,7 @@ function saveEditedContent() {
   dialog.value = false
 }
 
-async function getEmbeddingDimensions(providerConfig) {
+async function getEmbeddingDimensions(providerConfig: AnyRecord) {
   if (loadingEmbeddingDim.value) return
   
   loadingEmbeddingDim.value = true
@@ -77,12 +79,12 @@ async function getEmbeddingDimensions(providerConfig) {
   }
 }
 
-function getValueBySelector(obj, selector) {
+function getValueBySelector(obj: unknown, selector: string): unknown {
   const keys = selector.split('.')
-  let current = obj
+  let current: unknown = obj
   for (const key of keys) {
-    if (current && typeof current === 'object' && key in current) {
-      current = current[key]
+    if (current && typeof current === 'object' && key in (current as AnyRecord)) {
+      current = (current as AnyRecord)[key]
     } else {
       return undefined
     }
@@ -90,7 +92,7 @@ function getValueBySelector(obj, selector) {
   return current
 }
 
-function shouldShowItem(itemMeta, itemKey) {
+function shouldShowItem(itemMeta: AnyRecord | null | undefined, itemKey: string | number) {
   if (!itemMeta?.condition) {
     return true
   }
@@ -103,7 +105,7 @@ function shouldShowItem(itemMeta, itemKey) {
   return true
 }
 
-function hasVisibleItemsAfter(items, currentIndex) {
+function hasVisibleItemsAfter(items: Record<string, unknown>, currentIndex: number) {
   const itemEntries = Object.entries(items)
 
   // 检查当前索引之后是否还有可见的配置项
@@ -120,7 +122,8 @@ function hasVisibleItemsAfter(items, currentIndex) {
 </script>
 
 <template>
-  <div class="config-section" v-if="iterable && metadata[metadataKey]?.type === 'object'">
+  <div class="astrbot-config">
+    <div class="config-section" v-if="iterable && metadata[metadataKey]?.type === 'object'">
     <v-list-item-title class="config-title">
       {{ metadata[metadataKey]?.description }} <span class="metadata-key">({{ metadataKey }})</span>
     </v-list-item-title>
@@ -128,9 +131,9 @@ function hasVisibleItemsAfter(items, currentIndex) {
       <span v-if="metadata[metadataKey]?.obvious_hint && metadata[metadataKey]?.hint" class="important-hint">‼️</span>
       {{ metadata[metadataKey]?.hint }}
     </v-list-item-subtitle>
-  </div>
+    </div>
 
-  <v-card-text class="px-0 py-1">
+    <v-card-text class="px-0 py-1">
     <!-- Object Type Configuration -->
     <div v-if="metadata[metadataKey]?.type === 'object' || metadata[metadataKey]?.config_template" class="object-config">
       <!-- Provider-level hint -->
@@ -150,7 +153,7 @@ function hasVisibleItemsAfter(items, currentIndex) {
         <div v-if="metadata[metadataKey].items[key]?.type === 'object'" class="nested-object">
           <div v-if="metadata[metadataKey].items[key] && !metadata[metadataKey].items[key]?.invisible && shouldShowItem(metadata[metadataKey].items[key], key)" class="nested-container">
             <v-expand-transition>
-              <AstrBotConfig :metadata="metadata[metadataKey].items" :iterable="iterable[key]" :metadataKey="key">
+              <AstrBotConfig :metadata="metadata[metadataKey].items" :iterable="iterable[key]" :metadataKey="String(key)">
               </AstrBotConfig>
             </v-expand-transition>
           </div>
@@ -281,11 +284,16 @@ function hasVisibleItemsAfter(items, currentIndex) {
       </v-card-text>
     </v-card>
   </v-dialog>
+  </div>
 </template>
 
 
 
 <style scoped>
+.astrbot-config {
+  display: contents;
+}
+
 .config-section {
   margin-bottom: 12px;
 }

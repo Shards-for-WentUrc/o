@@ -10,7 +10,7 @@
                     <div class="welcome-container fade-in" v-else>
                         <div class="welcome-title">
                             <span>Hello, I'm</span>
-                            <span class="bot-name">AstrBot ⭐</span>
+                            <span class="bot-name">Nebula ⭐</span>
                         </div>
                         <p class="text-caption text-medium-emphasis mt-2">
                             测试配置: {{ configId || 'default' }}
@@ -45,15 +45,19 @@
     </v-card>
 
     <!-- 图片预览对话框 -->
-    <v-dialog v-model="imagePreviewDialog" max-width="90vw" max-height="90vh">
+    <v-dialog v-model="imagePreviewDialog" max-width="90vw" max-height="90vh" scrollable>
         <v-card class="image-preview-card" elevation="8">
-            <v-card-title class="d-flex justify-space-between align-center pa-4">
+            <v-card-title class="image-preview-header d-flex justify-space-between align-center pa-4">
                 <span>{{ t('core.common.imagePreview') }}</span>
                 <v-btn icon="mdi-close" variant="text" @click="imagePreviewDialog = false" />
             </v-card-title>
-            <v-card-text class="text-center pa-4">
+            <v-card-text class="image-preview-body text-center pa-4">
                 <img :src="previewImageUrl" class="preview-image-large" />
             </v-card-text>
+            <v-card-actions class="image-preview-footer pa-2">
+                <v-spacer />
+                <v-btn variant="text" @click="imagePreviewDialog = false">{{ t('core.common.close') }}</v-btn>
+            </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
@@ -317,9 +321,34 @@ onBeforeUnmount(() => {
     animation: fadeIn 0.3s ease-in-out;
 }
 
+.image-preview-card {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+}
+
+.image-preview-header {
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--v-theme-border);
+    background: rgb(var(--v-theme-surface));
+}
+
+.image-preview-body {
+    flex: 1;
+    overflow: auto;
+}
+
+.image-preview-footer {
+    flex-shrink: 0;
+    border-top: 1px solid var(--v-theme-border);
+    background: rgb(var(--v-theme-surface));
+}
+
 .preview-image-large {
     max-width: 100%;
-    max-height: 70vh;
+    height: auto;
     object-fit: contain;
+    display: block;
+    margin: 0 auto;
 }
 </style>
