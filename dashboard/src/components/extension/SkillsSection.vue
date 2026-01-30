@@ -45,8 +45,18 @@
         <v-card-title>{{ tm('skills.uploadDialogTitle') }}</v-card-title>
         <v-card-text>
           <small class="text-grey">{{ tm('skills.uploadHint') }}</small>
-          <v-file-input v-model="uploadFile" accept=".zip" :label="tm('skills.selectFile')" prepend-icon="mdi-file-zip"
-            variant="outlined" class="mt-4" :multiple="false" />
+          <v-file-input
+            v-model="uploadFile"
+            accept=".zip"
+            :label="tm('skills.selectFile')"
+            variant="outlined"
+            class="mt-4"
+            :multiple="false"
+          >
+            <template #prepend>
+              <v-icon size="small">mdi-file-zip</v-icon>
+            </template>
+          </v-file-input>
         </v-card-text>
         <v-card-actions class="d-flex justify-end">
           <v-btn variant="text" @click="uploadDialog = false">{{ tm('skills.cancel') }}</v-btn>
@@ -251,7 +261,6 @@ export default defineComponent({
 <style scoped>
 .skill-description {
   display: -webkit-box;
-  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
