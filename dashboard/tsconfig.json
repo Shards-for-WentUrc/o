@@ -15,7 +15,7 @@
     "noImplicitAny": true, // 这一行其实包含在 strict 里了，但写出来提醒自己
     
     // === 宽容度设置 ===
-    "allowJs": true,           
+    "allowJs": false,
     "skipLibCheck": true,      
     "useUnknownInCatchVariables": false, 
 

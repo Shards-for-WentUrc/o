@@ -76,43 +76,70 @@
   </div>
 </template>
 
-<script>
-import axios from "axios";
-import { ref, reactive, onMounted } from "vue";
+<script lang="ts">
+import axios, { type AxiosResponse } from "axios";
+import { defineComponent, onMounted, reactive, ref } from "vue";
 import ItemCard from "@/components/shared/ItemCard.vue";
 import { useI18n, useModuleI18n } from "@/i18n/composables";
 
-export default {
+type ApiResponse<T> = {
+  status: "ok" | "error";
+  message?: string | null;
+  data?: T;
+};
+
+type SkillItem = {
+  name: string;
+  description: string;
+  path: string;
+  active: boolean;
+};
+
+export default defineComponent({
   name: "SkillsSection",
   components: { ItemCard },
   setup() {
     const { t } = useI18n();
     const { tm } = useModuleI18n("features/extension");
 
-    const skills = ref([]);
+    const skills = ref<SkillItem[]>([]);
     const loading = ref(false);
     const uploading = ref(false);
     const uploadDialog = ref(false);
-    const uploadFile = ref(null);
-    const itemLoading = reactive({});
+    const uploadFile = ref<File | File[] | null>(null);
+    const itemLoading = reactive<Record<string, boolean>>({});
     const deleteDialog = ref(false);
     const deleting = ref(false);
-    const skillToDelete = ref(null);
-    const snackbar = reactive({ show: false, message: "", color: "success" });
+    const skillToDelete = ref<SkillItem | null>(null);
+    const snackbar = reactive<{ show: boolean; message: string; color: string }>({
+      show: false,
+      message: "",
+      color: "success",
+    });
 
-    const showMessage = (message, color = "success") => {
+    const showMessage = (message: string, color: string = "success") => {
       snackbar.message = message;
       snackbar.color = color;
       snackbar.show = true;
     };
 
+    const assertOk = <T,>(res: AxiosResponse<ApiResponse<T>>): ApiResponse<T> => {
+      const status = res?.data?.status;
+      if (status !== "ok") {
+        const msg = res?.data?.message || "Request failed";
+        throw new Error(msg);
+      }
+      return res.data;
+    };
+
     const fetchSkills = async () => {
       loading.value = true;
       try {
-        const res = await axios.get("/api/skills");
-        skills.value = res.data.data || [];
+        const res = await axios.get<ApiResponse<SkillItem[]>>("/api/skills");
+        const data = assertOk(res);
+        skills.value = data.data || [];
       } catch (err) {
-        showMessage(tm("skills.loadFailed"), "error");
+        showMessage((err as any)?.message || tm("skills.loadFailed"), "error");
       } finally {
         loading.value = false;
       }
@@ -131,35 +158,47 @@ export default {
           return;
         }
         formData.append("file", file);
-        await axios.post("/api/skills/upload", formData, {
+        const res = await axios.post<ApiResponse<{ name: string }>>(
+          "/api/skills/upload",
+          formData,
+          {
           headers: { "Content-Type": "multipart/form-data" },
-        });
+          }
+        );
+        assertOk(res);
         showMessage(tm("skills.uploadSuccess"), "success");
         uploadDialog.value = false;
         uploadFile.value = null;
         await fetchSkills();
       } catch (err) {
-        showMessage(tm("skills.uploadFailed"), "error");
+        showMessage((err as any)?.message || tm("skills.uploadFailed"), "error");
       } finally {
         uploading.value = false;
       }
     };
 
-    const toggleSkill = async (skill) => {
+    const toggleSkill = async (skill: SkillItem) => {
       const nextActive = !skill.active;
       itemLoading[skill.name] = true;
       try {
-        await axios.post("/api/skills/update", { name: skill.name, active: nextActive });
+        const res = await axios.post<ApiResponse<{ name: string; active: boolean }>>(
+          "/api/skills/update",
+          {
+          name: skill.name,
+          active: nextActive,
+          }
+        );
+        assertOk(res);
         skill.active = nextActive;
         showMessage(tm("skills.updateSuccess"), "success");
       } catch (err) {
-        showMessage(tm("skills.updateFailed"), "error");
+        showMessage((err as any)?.message || tm("skills.updateFailed"), "error");
       } finally {
         itemLoading[skill.name] = false;
       }
     };
 
-    const confirmDelete = (skill) => {
+    const confirmDelete = (skill: SkillItem) => {
       skillToDelete.value = skill;
       deleteDialog.value = true;
     };
@@ -168,12 +207,18 @@ export default {
       if (!skillToDelete.value) return;
       deleting.value = true;
       try {
-        await axios.post("/api/skills/delete", { name: skillToDelete.value.name });
+        const res = await axios.post<ApiResponse<{ name: string }>>(
+          "/api/skills/delete",
+          {
+            name: skillToDelete.value.name,
+          }
+        );
+        assertOk(res);
         showMessage(tm("skills.deleteSuccess"), "success");
         deleteDialog.value = false;
         await fetchSkills();
       } catch (err) {
-        showMessage(tm("skills.deleteFailed"), "error");
+        showMessage((err as any)?.message || tm("skills.deleteFailed"), "error");
       } finally {
         deleting.value = false;
       }
@@ -200,7 +245,7 @@ export default {
       deleteSkill,
     };
   },
-};
+});
 </script>
 
 <style scoped>
