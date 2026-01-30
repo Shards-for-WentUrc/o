@@ -298,7 +298,7 @@
             style="height: 15rem;"
           >
             <template #item-details>
-              <v-chip v-if="plugin?.pinned" color="warning" size="x-small" label style="position: absolute; right: 8px; top: 8px; z-index: 10; height: 20px; font-weight: bold;">
+              <v-chip v-if="plugin?.pinned" color="warning" size="small" label style="position: absolute; right: 8px; top: 8px; z-index: 10; height: 26px; padding: 0 10px; font-weight: bold;">
                 {{ tm('market.recommended') }}
               </v-chip>
 

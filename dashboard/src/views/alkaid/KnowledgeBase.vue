@@ -434,6 +434,7 @@
 import axios from 'axios';
 import ConsoleDisplayer from '@/components/shared/ConsoleDisplayer.vue';
 import { useModuleI18n } from '@/i18n/composables';
+import { getSelectedGitHubProxy as getSelectedGitHubProxyUtil } from '@/utils/githubProxy'
 
 type ProviderConfig = {
     id: string
@@ -630,6 +631,9 @@ export default {
         this.getProviderList();
     },
     methods: {
+        getSelectedGitHubProxy() {
+            return getSelectedGitHubProxyUtil();
+        },
         llmModelProps(providerConfig: ProviderConfig) {
             return {
                 title: providerConfig.llm_model || providerConfig.id,
@@ -725,7 +729,7 @@ export default {
             try {
                 const response = await axios.post('/api/plugin/update', {
                     name: 'astrbot_plugin_knowledge_base',
-                    proxy: localStorage.getItem('selectedGitHubProxy') || ""
+                    proxy: this.getSelectedGitHubProxy()
                 });
 
                 if (response.data.status === 'ok') {
@@ -749,7 +753,7 @@ export default {
             this.installing = true;
             axios.post('/api/plugin/install', {
                 url: "https://github.com/lxfight/astrbot_plugin_knowledge_base",
-                proxy: localStorage.getItem('selectedGitHubProxy') || ""
+                proxy: this.getSelectedGitHubProxy()
             })
                 .then(response => {
                     if (response.data.status === 'ok') {
