@@ -59,6 +59,11 @@ const MainRoutes: RouteRecordRaw = {
       component: () => import('@/views/ConsolePage.vue')
     },
     {
+      name: 'Trace',
+      path: '/trace',
+      component: () => import('@/views/TracePage.vue')
+    },
+    {
       name: 'NativeKnowledgeBase',
       path: '/knowledge-base',
       component: () => import('@/views/knowledge-base/index.vue'),
