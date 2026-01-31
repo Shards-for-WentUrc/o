@@ -332,10 +332,10 @@
     <UninstallConfirmDialog v-model="showUninstallDialogModel" @confirm="onUninstallConfirm" />
 
     <!-- 配置对话框（下沉） -->
-    <v-dialog v-model="configDialogModel" width="1000">
-      <v-card>
-        <v-card-title class="text-h5">{{ tm('dialogs.config.title') }}</v-card-title>
-        <v-card-text>
+    <v-dialog v-model="configDialogModel" width="1000" scrollable>
+      <v-card class="dialog-sticky-card">
+        <v-card-title class="text-h5 dialog-sticky-title">{{ tm('dialogs.config.title') }}</v-card-title>
+        <v-card-text class="dialog-sticky-content">
           <AstrBotConfig
             v-if="extensionConfig?.metadata"
             :metadata="extensionConfig.metadata"
@@ -345,7 +345,7 @@
           />
           <p v-else>{{ tm('dialogs.config.noConfig') }}</p>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="dialog-sticky-actions">
           <v-spacer></v-spacer>
           <v-btn color="blue-darken-1" variant="text" @click="emit('save-config')">{{ tm('buttons.saveAndClose') }}</v-btn>
           <v-btn color="blue-darken-1" variant="text" @click="configDialogModel = false">{{ tm('buttons.close') }}</v-btn>
@@ -369,10 +369,10 @@
     </v-dialog>
 
     <!-- 插件信息对话框（下沉） -->
-    <v-dialog v-model="showPluginInfoDialogModel" width="1200">
-      <v-card>
-        <v-card-title class="text-h5">{{ selectedPlugin?.name }} {{ tm('buttons.viewInfo') }}</v-card-title>
-        <v-card-text>
+    <v-dialog v-model="showPluginInfoDialogModel" width="1200" scrollable>
+      <v-card class="dialog-sticky-card">
+        <v-card-title class="text-h5 dialog-sticky-title">{{ selectedPlugin?.name }} {{ tm('buttons.viewInfo') }}</v-card-title>
+        <v-card-text class="dialog-sticky-content">
           <v-data-table
             style="font-size: 17px;"
             :headers="pluginHandlerInfoHeaders"
@@ -398,7 +398,7 @@
             </template>
           </v-data-table>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="dialog-sticky-actions">
           <v-spacer></v-spacer>
           <v-btn color="blue-darken-1" variant="text" @click="showPluginInfoDialogModel = false">{{ tm('buttons.close') }}</v-btn>
         </v-card-actions>
@@ -552,6 +552,33 @@ const pluginHandlerInfoHeaders = computed(() => props.pluginHandlerInfoHeaders)
 </script>
 
 <style scoped>
+
+.dialog-sticky-card {
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.dialog-sticky-title {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgb(var(--v-theme-surface));
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.dialog-sticky-content {
+  flex: 1;
+  overflow: auto;
+}
+
+.dialog-sticky-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: rgb(var(--v-theme-surface));
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
 
 :deep(.installed-extension-card .v-card-text) {
   padding-bottom: 0 !important;
